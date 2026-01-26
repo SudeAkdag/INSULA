@@ -1,0 +1,43 @@
+name: insula
+description: "A new Flutter project."
+
+# Prevent accidental publishing to pub.dev.
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  google_fonts: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # 
+  generate: true
+
+  fonts:
+    - family: SplineSans  # kodda çağırılacak isim.
+      fonts:
+        - asset: assets/fonts/SplineSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/SplineSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/SplineSans-Bold.ttf
+          weight: 700
+
+  assets:
+    # Add assets from the images directory to the application.
+    - assets/images/
