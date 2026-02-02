@@ -56,7 +56,7 @@ class ExerciseScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(color: Colors.green.withAlpha(30), borderRadius: BorderRadius.circular(12)),
-                  child: const Text("+5%", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
+                  child: const Text("+6%", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
               ],
             ),
