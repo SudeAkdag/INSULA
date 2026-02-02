@@ -1,6 +1,6 @@
 // presentation/widgets/custom_bottom_nav.dart
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
+import '../../../core/theme/app_colors.dart';
 
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -23,7 +23,7 @@ class CustomBottomNav extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(10),
             blurRadius: 15,
             offset: const Offset(0, -5),
           ),
@@ -39,7 +39,7 @@ class CustomBottomNav extends StatelessWidget {
             elevation: 0,
             type: BottomNavigationBarType.fixed,
             selectedItemColor: AppColors.secondary,
-            unselectedItemColor: AppColors.secondary.withOpacity(0.4),
+            unselectedItemColor: AppColors.secondary.withAlpha(100),
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
             unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
             items: const [

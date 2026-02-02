@@ -1,7 +1,7 @@
 // presentation/screens/main_screen.dart
 import 'package:flutter/material.dart';
-import '../widgets/custom_bottom_nav.dart';
-import '../widgets/custom_side_drawer.dart';
+import '../widgets/drawers/custom_bottom_nav.dart';
+import '../widgets/drawers/custom_side_drawer.dart';
 import 'nutrition_screen.dart';
 import 'medication_screen.dart';
 import 'exercise_screen.dart';

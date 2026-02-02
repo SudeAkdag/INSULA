@@ -1,6 +1,6 @@
 // presentation/widgets/custom_side_drawer.dart
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
+import '../../../core/theme/app_colors.dart';
 
 class CustomSideDrawer extends StatelessWidget {
   const CustomSideDrawer({super.key});
@@ -76,7 +76,7 @@ class CustomSideDrawer extends StatelessWidget {
           Text(
             "ayse.yilmaz@ornek.com",
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withAlpha(100),
               fontSize: 13,
             ),
           ),
