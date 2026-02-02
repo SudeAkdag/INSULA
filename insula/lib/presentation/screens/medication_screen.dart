@@ -116,17 +116,21 @@ class _MedicationScreenState extends State<MedicationScreen> {
                   ),
                 ],
               ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: null, // UI-only
-        backgroundColor: AppColors.primary,
+        backgroundColor: const Color(0xFFFFC107),
         elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.full), // Tam yuvarlak
-        ),
-        child: const Icon(
+        icon: const Icon(
           Icons.add,
-          color: Colors.white,
-          size: 32,
+          color: AppColors.secondary,
+          size: 24,
+        ),
+        label: Text(
+          "İlaç Ekle",
+          style: AppTextStyles.body.copyWith(
+            color: AppColors.secondary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

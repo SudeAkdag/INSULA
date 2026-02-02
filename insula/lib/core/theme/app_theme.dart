@@ -25,13 +25,13 @@ class AppTheme {
       ),
 
       // Kart Tasarımları (HTML'deki borderRadius değerlerini buraya işliyoruz)
-      cardTheme: CardTheme(
-        color: AppColors.surfaceLight,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg), // 24px
-        ),
-      ),
+     cardTheme: CardThemeData(
+  color: AppColors.surfaceLight,
+  elevation: 2,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(AppRadius.lg),
+  ),
+),
 
       // Navigasyon Çubuğu Teması
       navigationBarTheme: NavigationBarThemeData(
