@@ -5,6 +5,7 @@ import '../widgets/drawers/custom_side_drawer.dart';
 import 'nutrition_screen.dart';
 import 'medication_screen.dart';
 import 'exercise_screen.dart';
+import 'home_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -21,7 +22,7 @@ class _MainScreenState extends State<MainScreen> {
   // SIRALAMA KESİNLİKLE BU ŞEKİLDE OLMALI:
   final List<Widget> _screens = [
     const MedicationScreen(),                       // İndeks 0 (İlaç)
-    const Center(child: Text("Ana Sayfa İçeriği")), // İndeks 1 (Ana Sayfa)
+    const HomeScreen(),                             // İndeks 1 (Ana Sayfa)
     const NutritionScreen(),                        // İndeks 2 (Beslenme)
     const ExerciseScreen(),                         // İndeks 3 (Egzersiz)
   ];
@@ -42,6 +43,7 @@ class _MainScreenState extends State<MainScreen> {
           // Aktif Sayfa (Listenin doğru elemanını çeker)
           _screens[_selectedIndex],
           
+          // Hamburger Menü Butonu
           // Hamburger Menü Butonu
           Positioned(
             top: 50,
