@@ -69,7 +69,9 @@ class MealCard extends StatelessWidget {
           children: [
             Text(meal.type, style: AppTextStyles.h1.copyWith(fontSize: 16)),
             if (meal.time != null)
-              Text(meal.time!, style: AppTextStyles.label), //
+              Text(meal.time!, style: AppTextStyles.label) //
+            else if (meal.items.isEmpty)
+              Text("Henüz girilmedi", style: AppTextStyles.label.copyWith(color: AppColors.textSecLight)),
           ],
         ),
         const Spacer(),
@@ -127,12 +129,14 @@ class MealCard extends StatelessWidget {
   Color _getMealColor(String type) {
     if (type == "Kahvaltı") return AppColors.primary;
     if (type == "Öğle Yemeği") return AppColors.tertiary;
+    if (type == "Akşam Yemeği") return AppColors.secondary;
     return AppColors.secondary;
   }
 
   IconData _getMealIcon(String type) {
     if (type == "Kahvaltı") return Icons.wb_twilight;
     if (type == "Öğle Yemeği") return Icons.sunny;
-    return Icons.bedtime;
+    if (type == "Akşam Yemeği") return Icons.bedtime;
+    return Icons.cookie_outlined;
   }
 }
