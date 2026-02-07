@@ -64,6 +64,11 @@ class NutritionRepository {
           ),
         ],
       ),
+      // YENİ: Akşam Yemeği (Henüz girilmedi)
+      Meal(type: "Akşam Yemeği", items: []),
+  
+      // YENİ: Ara Öğünler (Henüz girilmedi)
+      Meal(type: "Ara Öğünler", items: []),
     ];
   }
 
