@@ -18,17 +18,17 @@ class AddMedicationSaveButton extends StatelessWidget {
       height: 56,
       child: ElevatedButton.icon(
         onPressed: onPressed,
-        icon: const Icon(Icons.save, color: Colors.white, size: 22),
+        icon: Icon(Icons.save, color: AppColors.secondary, size: 22),
         label: Text(
           'Kaydet',
           style: AppTextStyles.body.copyWith(
-            color: Colors.white,
+            color: AppColors.secondary,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.accentTeal,
+          backgroundColor: AppColors.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),

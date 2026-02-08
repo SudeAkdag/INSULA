@@ -36,6 +36,9 @@ class AddMedicationFormCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(_cardRadius),
+        border: const Border(
+          left: BorderSide(color: AppColors.accentTeal, width: 6),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -52,7 +55,7 @@ class AddMedicationFormCard extends StatelessWidget {
             controller: nameController,
             decoration: InputDecoration(
               hintText: 'Örn: Metformin',
-              hintStyle: const TextStyle(color: Colors.grey),
+              hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
               filled: true,
               fillColor: AppColors.backgroundLight,
               border: OutlineInputBorder(
@@ -62,6 +65,7 @@ class AddMedicationFormCard extends StatelessWidget {
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               suffixIcon: Icon(Icons.search, color: AppColors.accentTeal, size: 22),
             ),
+            style: AppTextStyles.body,
             validator: nameValidator,
           ),
           const SizedBox(height: 16),

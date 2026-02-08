@@ -45,6 +45,9 @@ class AddMedicationDoseCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(_cardRadius),
+        border: const Border(
+          left: BorderSide(color: AppColors.primary, width: 6),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),

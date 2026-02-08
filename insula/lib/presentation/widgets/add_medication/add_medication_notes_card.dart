@@ -47,9 +47,10 @@ class AddMedicationNotesCard extends StatelessWidget {
           child: TextField(
             controller: controller,
             maxLines: 4,
+            style: AppTextStyles.body,
             decoration: InputDecoration.collapsed(
               hintText: hint,
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+              hintStyle: AppTextStyles.body.copyWith(color: Colors.grey, fontSize: 14),
             ),
           ),
         ),

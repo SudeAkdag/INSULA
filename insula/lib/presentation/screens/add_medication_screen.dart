@@ -7,6 +7,8 @@ import '../widgets/add_medication/add_medication_form_card.dart';
 import '../widgets/add_medication/add_medication_dose_card.dart';
 import '../widgets/add_medication/add_medication_notes_card.dart';
 import '../widgets/add_medication/add_medication_save_button.dart';
+import '../widgets/add_medication/medication_type_bottom_sheet.dart';
+import '../widgets/add_medication/usage_time_bottom_sheet.dart';
 
 class AddMedicationScreen extends StatefulWidget {
   const AddMedicationScreen({super.key});
@@ -57,7 +59,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           mainAxisSize: MainAxisSize.min,
           children: options
               .map((o) => ListTile(
-                    title: Text(o),
+                    title: Text(o, style: AppTextStyles.body),
                     onTap: () {
                       onSelect(o);
                       Navigator.pop(ctx);
@@ -117,11 +119,20 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 medicationType: _medicationType,
                 dosage: _dosage,
                 frequency: _frequency,
-                onTypeTap: () => _showOptions(
-                  context,
-                  ['Tablet', 'Şurup', 'İğne', 'Kapsül'],
-                  (v) => setState(() => _medicationType = v),
-                ),
+                onTypeTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => Container(
+                      height: MediaQuery.of(ctx).size.height * 0.65,
+                      child: MedicationTypeBottomSheet(
+                        initialValue: _medicationType == 'Tür Seçiniz' ? null : _medicationType,
+                        onConfirm: (v) => setState(() => _medicationType = v),
+                      ),
+                    ),
+                  );
+                },
                 onDosageTap: () => _showOptions(
                   context,
                   ['10 mg', '500 mg', '1000 mg'],
@@ -157,11 +168,20 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                   ['1 Tablet', '2 Tablet', '1 Ölçek'],
                   (v) => setState(() => _dose1Amount = v),
                 ),
-                onUsageTimeTap: () => _showOptions(
-                  context,
-                  ['Sabah', 'Öğle', 'Akşam', 'Gece'],
-                  (v) => setState(() => _dose1UsageTime = v),
-                ),
+                onUsageTimeTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => Container(
+                      height: MediaQuery.of(ctx).size.height * 0.6,
+                      child: UsageTimeBottomSheet(
+                        initialValue: _dose1UsageTime,
+                        onConfirm: (v) => setState(() => _dose1UsageTime = v),
+                      ),
+                    ),
+                  );
+                },
                 onConditionTap: () => _showOptions(
                   context,
                   ['Aç', 'Tok'],
@@ -181,11 +201,20 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                   ['1 Tablet', '2 Tablet', '1 Ölçek'],
                   (v) => setState(() => _dose2Amount = v),
                 ),
-                onUsageTimeTap: () => _showOptions(
-                  context,
-                  ['Sabah', 'Öğle', 'Akşam', 'Gece'],
-                  (v) => setState(() => _dose2UsageTime = v),
-                ),
+                onUsageTimeTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => Container(
+                      height: MediaQuery.of(ctx).size.height * 0.6,
+                      child: UsageTimeBottomSheet(
+                        initialValue: _dose2UsageTime,
+                        onConfirm: (v) => setState(() => _dose2UsageTime = v),
+                      ),
+                    ),
+                  );
+                },
                 onConditionTap: () => _showOptions(
                   context,
                   ['Aç', 'Tok'],
