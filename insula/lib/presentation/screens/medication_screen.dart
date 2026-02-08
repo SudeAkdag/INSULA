@@ -7,6 +7,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../widgets/medication/medication_progress_card.dart';
 import '../widgets/medication/medication_section.dart';
 import '../widgets/medication/medication_card_data.dart';
+import 'add_medication_screen.dart';
 
 class MedicationScreen extends StatefulWidget {
   const MedicationScreen({super.key});
@@ -121,7 +122,14 @@ class _MedicationScreenState extends State<MedicationScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: null, // UI-only
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (context) => const AddMedicationScreen(),
+            ),
+          );
+        },
         backgroundColor: const Color(0xFFFFC107),
         elevation: 4,
         icon: const Icon(
