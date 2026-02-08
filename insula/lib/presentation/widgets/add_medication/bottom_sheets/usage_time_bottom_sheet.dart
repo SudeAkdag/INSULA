@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
 import 'confirm_selection_button.dart';
 
 /// Kullanım zamanı seçimi için bottom sheet: Sabah, Öğle, Akşam, Fark Etmez.
@@ -58,16 +58,38 @@ class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
   static const Color _radioBorderLight = Color(0xFFcee4e9);
 
   Widget _buildRadio(bool selected) {
+    if (selected) {
+      return Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.transparent,
+          border: Border.all(color: AppColors.accentTeal, width: 2.5),
+        ),
+        child: Center(
+          child: Container(
+            width: 12,
+            height: 12,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       width: 22,
       height: 22,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: _radioBorderLight,
+          color: Colors.grey.shade300,
           width: 2,
         ),
-        color: selected ? AppColors.accentTeal : Colors.transparent,
+        color: Colors.transparent,
       ),
     );
   }
@@ -76,13 +98,13 @@ class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Bottom sheet yarım ekrana sıkışmasın:
-        // İçerik kısa ise kendi boyuna göre,
-        // uzun ise ekranın %90'ına kadar uzasın (fazlası scroll).
-        final maxH = constraints.maxHeight * 0.90;
+        // Force sheet to occupy 82% of the device screen height so
+        // it reliably covers most of the screen even if caller
+        // didn't set isScrollControlled.
+        final maxH = MediaQuery.of(context).size.height * 0.82;
 
         return Container(
-          constraints: BoxConstraints(maxHeight: maxH),
+          height: maxH,
           decoration: BoxDecoration(
             color: AppColors.backgroundLight,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -146,20 +168,18 @@ class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                                 decoration: BoxDecoration(
                                   color: AppColors.surfaceLight,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(18),
                                   border: Border.all(
-                                    color: isSelected ? const Color(0xFFcee4e9) : Colors.transparent,
-                                    width: isSelected ? 2 : 1,
+                                    color: isSelected ? const Color(0xFFe6f4f6) : Colors.transparent,
+                                    width: isSelected ? 1.5 : 0,
                                   ),
-                                  boxShadow: isSelected
-                                      ? [
-                                          BoxShadow(
-                                            color: AppColors.accentTeal.withOpacity(0.08),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ]
-                                      : null,
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Color(0x12000000),
+                                      blurRadius: 10,
+                                      offset: Offset(0, 6),
+                                    ),
+                                  ],
                                 ),
                                 child: Row(
                                   children: [
@@ -181,8 +201,9 @@ class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
                                       child: Text(
                                         option.title,
                                         style: AppTextStyles.body.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textMainLight,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                          color: AppColors.accentTeal,
                                         ),
                                       ),
                                     ),

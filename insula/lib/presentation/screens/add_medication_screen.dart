@@ -7,8 +7,11 @@ import '../widgets/add_medication/add_medication_form_card.dart';
 import '../widgets/add_medication/add_medication_dose_card.dart';
 import '../widgets/add_medication/add_medication_notes_card.dart';
 import '../widgets/add_medication/add_medication_save_button.dart';
-import '../widgets/add_medication/medication_type_bottom_sheet.dart';
-import '../widgets/add_medication/usage_time_bottom_sheet.dart';
+import '../widgets/add_medication/bottom_sheets/medication_type_bottom_sheet.dart';
+import '../widgets/add_medication/bottom_sheets/usage_time_bottom_sheet.dart';
+import '../widgets/add_medication/bottom_sheets/usage_status_bottom_sheet.dart';
+import '../widgets/add_medication/bottom_sheets/frequency_bottom_sheet.dart';
+import '../widgets/add_medication/bottom_sheets/dose_amount_bottom_sheet.dart';
 
 class AddMedicationScreen extends StatefulWidget {
   const AddMedicationScreen({super.key});
@@ -24,17 +27,40 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
 
   String _medicationType = 'Tür Seçiniz';
   String _dosage = '10 mg';
-  String _frequency = 'Günde 2 kez';
+  String _frequency = 'Günde 1 kez';
 
-  TimeOfDay _dose1Time = const TimeOfDay(hour: 8, minute: 0);
-  String _dose1Amount = '1 Tablet';
-  String _dose1UsageTime = 'Sabah';
-  String _dose1Condition = 'Aç';
+  late List<TimeOfDay> _doseTimes;
+  late List<String> _doseAmounts;
+  late List<String> _doseUsageTimes;
+  late List<String> _doseConditions;
 
-  TimeOfDay _dose2Time = const TimeOfDay(hour: 20, minute: 0);
-  String _dose2Amount = '1 Tablet';
-  String _dose2UsageTime = 'Akşam';
-  String _dose2Condition = 'Tok';
+  @override
+  void initState() {
+    super.initState();
+    _initializeDoses();
+  }
+
+  void _initializeDoses() {
+    final doseCount = _extractDoseCount(_frequency);
+    _doseTimes = List.generate(
+      doseCount,
+      (i) => TimeOfDay(hour: 8 + (i * 6), minute: 0),
+    );
+    _doseAmounts = List.filled(doseCount, '1 Tablet');
+    _doseUsageTimes = List.filled(doseCount, 'Sabah');
+    _doseConditions = List.filled(doseCount, 'Aç');
+  }
+
+  int _extractDoseCount(String frequency) {
+    // Parse "Günde X kez" and extract the number X
+    if (frequency.contains('1')) return 1;
+    if (frequency.contains('2')) return 2;
+    if (frequency.contains('3')) return 3;
+    if (frequency.contains('4')) return 4;
+    if (frequency == 'Gün aşırı') return 1;
+    if (frequency.contains('Haftada')) return 1;
+    return 2; // Default
+  }
 
   @override
   void dispose() {
@@ -72,10 +98,30 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   }
 
   void _save() {
-    if (_formKey.currentState?.validate() ?? false) {
-      // TODO: İlaç kaydetme mantığı
-      Navigator.pop(context);
+    final name = _nameController.text.trim();
+    
+    // Simple validation: require medication name
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen ilaç adını girin')),
+      );
+      return;
     }
+
+    // Build medication data from the form and dose cards
+    final medicationData = {
+      'name': name,
+      'medicationType': _medicationType,
+      'dosage': _dosage,
+      'frequency': _frequency,
+      'doseTimes': _doseTimes,
+      'doseAmounts': _doseAmounts,
+      'doseUsageTimes': _doseUsageTimes,
+      'doseConditions': _doseConditions,
+      'notes': _notesController.text.trim(),
+    };
+    
+    Navigator.pop(context, medicationData);
   }
 
   @override
@@ -125,7 +171,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
                     builder: (ctx) => Container(
-                      height: MediaQuery.of(ctx).size.height * 0.65,
+                      height: MediaQuery.of(ctx).size.height * 0.82,
                       child: MedicationTypeBottomSheet(
                         initialValue: _medicationType == 'Tür Seçiniz' ? null : _medicationType,
                         onConfirm: (v) => setState(() => _medicationType = v),
@@ -138,11 +184,25 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                   ['10 mg', '500 mg', '1000 mg'],
                   (v) => setState(() => _dosage = v),
                 ),
-                onFrequencyTap: () => _showOptions(
-                  context,
-                  ['Günde 1 kez', 'Günde 2 kez', 'Günde 3 kez', 'Haftada 1 kez'],
-                  (v) => setState(() => _frequency = v),
-                ),
+                onFrequencyTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => Container(
+                      height: MediaQuery.of(ctx).size.height * 0.82,
+                      child: FrequencyBottomSheet(
+                        initialValue: _frequency,
+                        onConfirm: (v) {
+                          setState(() {
+                            _frequency = v;
+                            _initializeDoses();
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                },
                 nameValidator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'İlaç adı girin' : null,
               ),
@@ -156,69 +216,67 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              AddMedicationDoseCard(
-                title: '1. DOZ',
-                time: _dose1Time,
-                onTimeTap: () => _pickTime(_dose1Time, (t) => setState(() => _dose1Time = t)),
-                amount: _dose1Amount,
-                usageTime: _dose1UsageTime,
-                condition: _dose1Condition,
-                onAmountTap: () => _showOptions(
-                  context,
-                  ['1 Tablet', '2 Tablet', '1 Ölçek'],
-                  (v) => setState(() => _dose1Amount = v),
-                ),
-                onUsageTimeTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (ctx) => Container(
-                      height: MediaQuery.of(ctx).size.height * 0.6,
-                      child: UsageTimeBottomSheet(
-                        initialValue: _dose1UsageTime,
-                        onConfirm: (v) => setState(() => _dose1UsageTime = v),
-                      ),
+              ...List.generate(
+                _doseTimes.length,
+                (index) => Column(
+                  children: [
+                    AddMedicationDoseCard(
+                      title: '${index + 1}. DOZ',
+                      time: _doseTimes[index],
+                      onTimeTap: () => _pickTime(_doseTimes[index], (t) {
+                        setState(() => _doseTimes[index] = t);
+                      }),
+                      amount: _doseAmounts[index],
+                      usageTime: _doseUsageTimes[index],
+                      condition: _doseConditions[index],
+                      onAmountTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (ctx) => Container(
+                            height: MediaQuery.of(ctx).size.height * 0.82,
+                            child: DoseAmountBottomSheet(
+                              medicationType: _medicationType == 'Tür Seçiniz' ? 'Tablet' : _medicationType,
+                              initialValue: _doseAmounts[index],
+                              onConfirm: (v) => setState(() => _doseAmounts[index] = v),
+                            ),
+                          ),
+                        );
+                      },
+                      onUsageTimeTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (ctx) => Container(
+                            height: MediaQuery.of(ctx).size.height * 0.82,
+                            child: UsageTimeBottomSheet(
+                              initialValue: _doseUsageTimes[index],
+                              onConfirm: (v) =>
+                                  setState(() => _doseUsageTimes[index] = v),
+                            ),
+                          ),
+                        );
+                      },
+                      onConditionTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (ctx) => Container(
+                            height: MediaQuery.of(ctx).size.height * 0.82,
+                            child: UsageStatusBottomSheet(
+                              initialValue: _doseConditions[index],
+                              onConfirm: (v) =>
+                                  setState(() => _doseConditions[index] = v),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-                onConditionTap: () => _showOptions(
-                  context,
-                  ['Aç', 'Tok'],
-                  (v) => setState(() => _dose1Condition = v),
-                ),
-              ),
-              const SizedBox(height: 12),
-              AddMedicationDoseCard(
-                title: '2. DOZ',
-                time: _dose2Time,
-                onTimeTap: () => _pickTime(_dose2Time, (t) => setState(() => _dose2Time = t)),
-                amount: _dose2Amount,
-                usageTime: _dose2UsageTime,
-                condition: _dose2Condition,
-                onAmountTap: () => _showOptions(
-                  context,
-                  ['1 Tablet', '2 Tablet', '1 Ölçek'],
-                  (v) => setState(() => _dose2Amount = v),
-                ),
-                onUsageTimeTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (ctx) => Container(
-                      height: MediaQuery.of(ctx).size.height * 0.6,
-                      child: UsageTimeBottomSheet(
-                        initialValue: _dose2UsageTime,
-                        onConfirm: (v) => setState(() => _dose2UsageTime = v),
-                      ),
-                    ),
-                  );
-                },
-                onConditionTap: () => _showOptions(
-                  context,
-                  ['Aç', 'Tok'],
-                  (v) => setState(() => _dose2Condition = v),
+                    if (index < _doseTimes.length - 1) const SizedBox(height: 12),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),

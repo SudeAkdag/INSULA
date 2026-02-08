@@ -18,11 +18,39 @@ class MedicationScreen extends StatefulWidget {
 
 class _MedicationScreenState extends State<MedicationScreen> {
   DateTime? _selectedDate;
+  List<Map<String, dynamic>> _savedMedications = [];
 
   @override
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
+  }
+
+  List<MedicationCardData> _getMedicationsForSection(String usageTime) {
+    final medications = <MedicationCardData>[];
+    for (final med in _savedMedications) {
+      final doseUsageTimes = med['doseUsageTimes'] as List<String>;
+      final doseTimes = med['doseTimes'] as List<TimeOfDay>;
+      final doseAmounts = med['doseAmounts'] as List<String>;
+      
+      for (int i = 0; i < doseUsageTimes.length; i++) {
+        if (doseUsageTimes[i] == usageTime) {
+          final timeStr = '${doseTimes[i].hour.toString().padLeft(2, '0')}:${doseTimes[i].minute.toString().padLeft(2, '0')}';
+          medications.add(
+            MedicationCardData(
+              name: med['name'] as String,
+              dosage: doseAmounts[i],
+              time: timeStr,
+              icon: Icons.medication,
+              iconColor: Colors.blue.shade300,
+              dosageColor: Colors.blue,
+              isTaken: false,
+            ),
+          );
+        }
+      }
+    }
+    return medications;
   }
 
   @override
@@ -66,69 +94,41 @@ class _MedicationScreenState extends State<MedicationScreen> {
             },
           ),
           const SizedBox(height: 24),
-          MedicationSection(
-            title: 'Sabah',
-            medications: [
-              MedicationCardData(
-                name: 'Insulin Aspart',
-                dosage: '10 Ünite',
-                time: '08:00',
-                icon: Icons.medication_liquid,
-                iconColor: Colors.lightBlue,
-                dosageColor: Colors.blue,
-                isTaken: true,
-              ),
-              MedicationCardData(
-                name: 'Diamicron',
-                dosage: '60 mg',
-                time: '06:30',
-                icon: Icons.medication,
-                iconColor: Colors.red.shade300,
-                dosageColor: Colors.red,
-                isTaken: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          MedicationSection(
-            title: 'Öğle',
-            medications: [
-              MedicationCardData(
-                name: 'Metformin',
-                dosage: '1000 mg',
-                time: '13:00',
-                icon: Icons.medication,
-                iconColor: Colors.red.shade300,
-                dosageColor: Colors.red,
-                isTaken: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          MedicationSection(
-            title: 'Akşam',
-            medications: [
-              MedicationCardData(
-                name: 'Insulin Glargine',
-                dosage: '24 Ünite',
-                time: '20:00',
-                icon: Icons.medication_liquid,
-                iconColor: Colors.lightBlue,
-                dosageColor: Colors.blue,
-                isTaken: false,
-              ),
-            ],
-          ),
+          if (_getMedicationsForSection('Sabah').isNotEmpty) ...[
+            MedicationSection(
+              title: 'Sabah',
+              medications: _getMedicationsForSection('Sabah'),
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (_getMedicationsForSection('Öğle').isNotEmpty) ...[
+            MedicationSection(
+              title: 'Öğle',
+              medications: _getMedicationsForSection('Öğle'),
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (_getMedicationsForSection('Akşam').isNotEmpty) ...[
+            MedicationSection(
+              title: 'Akşam',
+              medications: _getMedicationsForSection('Akşam'),
+            ),
+          ],
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final result = await Navigator.push(
             context,
-            MaterialPageRoute<void>(
+            MaterialPageRoute<Map<String, dynamic>>(
               builder: (context) => const AddMedicationScreen(),
             ),
           );
+          if (result != null) {
+            setState(() {
+              _savedMedications.add(result);
+            });
+          }
         },
         backgroundColor: const Color(0xFFFFC107),
         elevation: 4,
