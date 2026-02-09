@@ -12,6 +12,7 @@ import '../widgets/add_medication/bottom_sheets/usage_time_bottom_sheet.dart';
 import '../widgets/add_medication/bottom_sheets/usage_status_bottom_sheet.dart';
 import '../widgets/add_medication/bottom_sheets/frequency_bottom_sheet.dart';
 import '../widgets/add_medication/bottom_sheets/dose_amount_bottom_sheet.dart';
+import '../widgets/add_medication/bottom_sheets/dosage_selection_bottom_sheet.dart';
 
 class AddMedicationScreen extends StatefulWidget {
   const AddMedicationScreen({super.key});
@@ -75,26 +76,6 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       initialTime: initial,
     );
     if (picked != null) onPicked(picked);
-  }
-
-  void _showOptions(BuildContext context, List<String> options, void Function(String) onSelect) {
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: options
-              .map((o) => ListTile(
-                    title: Text(o, style: AppTextStyles.body),
-                    onTap: () {
-                      onSelect(o);
-                      Navigator.pop(ctx);
-                    },
-                  ))
-              .toList(),
-        ),
-      ),
-    );
   }
 
   void _save() {
@@ -179,11 +160,20 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                     ),
                   );
                 },
-                onDosageTap: () => _showOptions(
-                  context,
-                  ['10 mg', '500 mg', '1000 mg'],
-                  (v) => setState(() => _dosage = v),
-                ),
+                onDosageTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => Container(
+                      height: MediaQuery.of(ctx).size.height * 0.82,
+                      child: DosageSelectionBottomSheet(
+                        initialValue: _dosage == 'Dozaj' ? null : _dosage,
+                        onConfirm: (v) => setState(() => _dosage = v),
+                      ),
+                    ),
+                  );
+                },
                 onFrequencyTap: () {
                   showModalBottomSheet(
                     context: context,

@@ -18,7 +18,7 @@ class MedicationProgressCard extends StatelessWidget {
     required this.selectedDate,
     required this.onDateSelected,
     this.progress = 0.75,
-    this.takenLabel = '3/4 Doz Alındı',
+    this.takenLabel = '3/4 İlaç Alındı',
     this.nextDoseLabel = "Sonraki doz: 20:00'de",
   });
 

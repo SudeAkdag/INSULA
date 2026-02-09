@@ -19,12 +19,13 @@ class UsageTimeBottomSheet extends StatefulWidget {
     required this.onConfirm,
   });
 
-  static const List<UsageTimeOption> options = [
+  static const List<UsageTimeOption> defaultOptions = [
     UsageTimeOption('Sabah', Icons.light_mode, Color(0xFFFFF8E1), AppColors.primary),
     UsageTimeOption('Öğle', Icons.wb_sunny, Color(0xFFFFECB3), Color(0xFFFF9800)),
     UsageTimeOption('Akşam', Icons.nightlight_round, Color(0xFFE8EAF6), Color(0xFF5C6BC0)),
-    UsageTimeOption('Fark Etmez', Icons.calendar_today, Color(0xFFEEEEEE), Color(0xFF757575)),
   ];
+
+  static const UsageTimeOption otherOption = UsageTimeOption('Diğer', Icons.add_circle_outline, Color(0xFFF3E5F5), Color(0xFF9C27B0));
 
   @override
   State<UsageTimeBottomSheet> createState() => _UsageTimeBottomSheetState();
@@ -41,21 +42,26 @@ class UsageTimeOption {
 
 class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
   late String _selected;
+  final TextEditingController _customController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     final initial = widget.initialValue;
-    final validTitles = UsageTimeBottomSheet.options.map((o) => o.title).toList();
+    final validTitles = UsageTimeBottomSheet.defaultOptions.map((o) => o.title).toList();
     _selected = (initial != null && validTitles.contains(initial)) ? initial : validTitles.first;
+  }
+
+  @override
+  void dispose() {
+    _customController.dispose();
+    super.dispose();
   }
 
   void _confirm() {
     widget.onConfirm(_selected);
     Navigator.pop(context);
   }
-
-  static const Color _radioBorderLight = Color(0xFFcee4e9);
 
   Widget _buildRadio(bool selected) {
     if (selected) {
@@ -155,14 +161,108 @@ class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                     child: Column(
-                      children: UsageTimeBottomSheet.options.map((option) {
-                        final isSelected = _selected == option.title;
-                        return Padding(
+                      children: [
+                        ...UsageTimeBottomSheet.defaultOptions.map((option) {
+                          final isSelected = _selected == option.title;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => setState(() => _selected = option.title),
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceLight,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: isSelected ? const Color(0xFFe6f4f6) : Colors.transparent,
+                                      width: isSelected ? 1.5 : 0,
+                                    ),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x12000000),
+                                        blurRadius: 10,
+                                        offset: Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: option.iconBgColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          option.icon,
+                                          color: option.iconColor,
+                                          size: 22,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Text(
+                                          option.title,
+                                          style: AppTextStyles.body.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 16,
+                                            color: AppColors.accentTeal,
+                                          ),
+                                        ),
+                                      ),
+                                      _buildRadio(isSelected),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                        Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: () => setState(() => _selected = option.title),
+                              onTap: () async {
+                                _customController.clear();
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext ctx) => AlertDialog(
+                                    title: const Text('Diğer Kullanım Zamanı'),
+                                    content: TextField(
+                                      controller: _customController,
+                                      decoration: InputDecoration(
+                                        hintText: 'Örn: Spor, Yemekten sonra',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: const Text('İptal'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          final text = _customController.text.trim();
+                                          if (text.isNotEmpty) {
+                                            setState(() {
+                                              _selected = text;
+                                            });
+                                            Navigator.pop(ctx);
+                                          }
+                                        },
+                                        child: const Text('Tamam'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                               borderRadius: BorderRadius.circular(16),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -170,8 +270,8 @@ class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
                                   color: AppColors.surfaceLight,
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(
-                                    color: isSelected ? const Color(0xFFe6f4f6) : Colors.transparent,
-                                    width: isSelected ? 1.5 : 0,
+                                    color: ((_selected != 'Sabah' && _selected != 'Öğle' && _selected != 'Akşam') ? const Color(0xFFe6f4f6) : Colors.transparent),
+                                    width: ((_selected != 'Sabah' && _selected != 'Öğle' && _selected != 'Akşam') ? 1.5 : 0),
                                   ),
                                   boxShadow: const [
                                     BoxShadow(
@@ -187,19 +287,19 @@ class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
                                       width: 40,
                                       height: 40,
                                       decoration: BoxDecoration(
-                                        color: option.iconBgColor,
+                                        color: UsageTimeBottomSheet.otherOption.iconBgColor,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
-                                        option.icon,
-                                        color: option.iconColor,
+                                        UsageTimeBottomSheet.otherOption.icon,
+                                        color: UsageTimeBottomSheet.otherOption.iconColor,
                                         size: 22,
                                       ),
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Text(
-                                        option.title,
+                                        UsageTimeBottomSheet.otherOption.title,
                                         style: AppTextStyles.body.copyWith(
                                           fontWeight: FontWeight.w700,
                                           fontSize: 16,
@@ -207,14 +307,14 @@ class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
                                         ),
                                       ),
                                     ),
-                                    _buildRadio(isSelected),
+                                    _buildRadio(_selected != 'Sabah' && _selected != 'Öğle' && _selected != 'Akşam'),
                                   ],
                                 ),
                               ),
                             ),
                           ),
-                        );
-                      }).toList(),
+                        ),
+                      ],
                     ),
                   ),
                   Padding(

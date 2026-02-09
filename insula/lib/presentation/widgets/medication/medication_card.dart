@@ -7,8 +7,9 @@ import 'medication_card_data.dart';
 /// İlaç adı, doz, saat ve alındı (checkbox) bilgisini içerir.
 class MedicationCard extends StatelessWidget {
   final MedicationCardData medication;
+  final ValueChanged<MedicationCardData>? onToggle;
 
-  const MedicationCard({super.key, required this.medication});
+  const MedicationCard({super.key, required this.medication, this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -71,28 +72,31 @@ class MedicationCard extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: medication.isTaken
-                  ? AppColors.secondary
-                  : Colors.transparent,
-              border: Border.all(
+          GestureDetector(
+            onTap: () => onToggle?.call(medication),
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
                 color: medication.isTaken
                     ? AppColors.secondary
-                    : AppColors.textSecLight.withOpacity(0.5),
-                width: 2,
+                    : Colors.transparent,
+                border: Border.all(
+                  color: medication.isTaken
+                      ? AppColors.secondary
+                      : AppColors.textSecLight.withOpacity(0.5),
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(6),
               ),
-              borderRadius: BorderRadius.circular(6),
+              child: medication.isTaken
+                  ? const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 16,
+                    )
+                  : null,
             ),
-            child: medication.isTaken
-                ? const Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 16,
-                  )
-                : null,
           ),
         ],
       ),

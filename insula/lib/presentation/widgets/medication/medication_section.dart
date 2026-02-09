@@ -9,11 +9,13 @@ import 'medication_card_data.dart';
 class MedicationSection extends StatelessWidget {
   final String title;
   final List<MedicationCardData> medications;
+  final ValueChanged<MedicationCardData>? onToggle;
 
   const MedicationSection({
     super.key,
     required this.title,
     required this.medications,
+    this.onToggle,
   });
 
   @override
@@ -29,7 +31,7 @@ class MedicationSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ...medications.map((med) => MedicationCard(medication: med)),
+        ...medications.map((med) => MedicationCard(medication: med, onToggle: onToggle)),
       ],
     );
   }

@@ -9,7 +9,9 @@ class MedicationCardData {
   final IconData icon;
   final Color iconColor;
   final Color dosageColor;
-  final bool isTaken;
+  bool isTaken;
+  final int parentIndex;
+  final int doseIndex;
 
   MedicationCardData({
     required this.name,
@@ -19,5 +21,7 @@ class MedicationCardData {
     required this.iconColor,
     required this.dosageColor,
     required this.isTaken,
+    required this.parentIndex,
+    required this.doseIndex,
   });
 }

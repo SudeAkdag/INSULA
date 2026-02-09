@@ -25,14 +25,12 @@ class _DoseAmountBottomSheetState extends State<DoseAmountBottomSheet> {
   late String _selected;
   late TextEditingController _customController;
   late String _injectionUnit; // "mL" veya "U"
-  late bool _showCustomInput;
 
   @override
   void initState() {
     super.initState();
     _customController = TextEditingController();
     _injectionUnit = 'mL';
-    _showCustomInput = false;
 
     final initial = widget.initialValue;
     if (initial != null && initial.isNotEmpty) {
@@ -40,7 +38,6 @@ class _DoseAmountBottomSheetState extends State<DoseAmountBottomSheet> {
       if (!_isValidOption(initial)) {
         _selected = 'Diğer (manuel)';
         _customController.text = initial;
-        _showCustomInput = true;
       } else {
         _selected = initial;
       }
@@ -123,6 +120,91 @@ class _DoseAmountBottomSheetState extends State<DoseAmountBottomSheet> {
       widget.onConfirm(_selected);
     }
     Navigator.pop(context);
+  }
+
+  void _showCustomAmountDialog() {
+    _customController.clear();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Özel Miktar Girin',
+          style: AppTextStyles.h1.copyWith(
+            fontSize: 18,
+            color: AppColors.accentTeal,
+          ),
+        ),
+        content: TextField(
+          controller: _customController,
+          decoration: InputDecoration(
+            hintText: widget.medicationType == 'Diğer'
+                ? 'Örn: 1 ölçek, 1 paket'
+                : widget.medicationType == 'Sprey'
+                    ? 'Örn: 5 puf'
+                    : widget.medicationType == 'İnsülin'
+                        ? 'Örn: 25 U'
+                        : widget.medicationType == 'Enjeksiyon'
+                            ? 'Örn: 0.75 mL'
+                            : 'Örn: 2.5 adet',
+            hintStyle: AppTextStyles.body.copyWith(
+              fontSize: 14,
+              color: AppColors.textSecLight,
+            ),
+            filled: true,
+            fillColor: AppColors.backgroundLight,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppColors.accentTeal,
+                width: 2,
+              ),
+            ),
+          ),
+          style: AppTextStyles.body.copyWith(
+            fontSize: 14,
+            color: AppColors.textMainLight,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'İptal',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecLight,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              final input = _customController.text.trim();
+              if (input.isNotEmpty) {
+                setState(() => _selected = input);
+                Navigator.pop(ctx);
+              }
+            },
+            child: Text(
+              'Kaydet',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.accentTeal,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildRadio(bool selected) {
@@ -304,10 +386,13 @@ class _DoseAmountBottomSheetState extends State<DoseAmountBottomSheet> {
                               color: Colors.transparent,
                               child: InkWell(
                                 onTap: () {
-                                  setState(() {
-                                    _selected = option;
-                                    _showCustomInput = isCustom;
-                                  });
+                                  if (isCustom) {
+                                    _showCustomAmountDialog();
+                                  } else {
+                                    setState(() {
+                                      _selected = option;
+                                    });
+                                  }
                                 },
                                 borderRadius: BorderRadius.circular(16),
                                 child: Container(
@@ -345,59 +430,6 @@ class _DoseAmountBottomSheetState extends State<DoseAmountBottomSheet> {
                                 ),
                               ),
                             ),
-                            if (isCustom && isSelected) ...[
-                              const SizedBox(height: 12),
-                              TextField(
-                                controller: _customController,
-                                decoration: InputDecoration(
-                                  hintText: widget.medicationType == 'Diğer'
-                                      ? 'Örn: 1 ölçek, 1 paket'
-                                      : widget.medicationType == 'Sprey'
-                                          ? 'Örn: 5 puf'
-                                          : widget.medicationType == 'İnsülin'
-                                              ? 'Örn: 25 U'
-                                              : widget.medicationType == 'Enjeksiyon'
-                                                  ? 'Örn: 0.75 mL'
-                                                  : 'Örn: 2.5 adet',
-                                  hintStyle: AppTextStyles.body.copyWith(
-                                    fontSize: 14,
-                                    color: AppColors.textSecLight,
-                                  ),
-                                  filled: true,
-                                  fillColor: AppColors.backgroundLight,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey.shade300),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.grey.shade300),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                      color: AppColors.accentTeal,
-                                      width: 2,
-                                    ),
-                                  ),
-                                ),
-                                style: AppTextStyles.body.copyWith(
-                                  fontSize: 14,
-                                  color: AppColors.textMainLight,
-                                ),
-                                onChanged: (_) => setState(() {}),
-                              ),
-                              if (_customController.text.isEmpty) ...[
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Lütfen bir değer girin',
-                                  style: AppTextStyles.body.copyWith(
-                                    fontSize: 12,
-                                    color: Colors.red.shade600,
-                                  ),
-                                ),
-                              ],
-                            ],
                           ],
                         ),
                       );

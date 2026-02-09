@@ -28,13 +28,23 @@ class _MedicationScreenState extends State<MedicationScreen> {
 
   List<MedicationCardData> _getMedicationsForSection(String usageTime) {
     final medications = <MedicationCardData>[];
-    for (final med in _savedMedications) {
+    final standardTimes = {'Sabah', 'Öğle', 'Akşam'};
+    
+    for (int medIndex = 0; medIndex < _savedMedications.length; medIndex++) {
+      final med = _savedMedications[medIndex];
       final doseUsageTimes = med['doseUsageTimes'] as List<String>;
       final doseTimes = med['doseTimes'] as List<TimeOfDay>;
       final doseAmounts = med['doseAmounts'] as List<String>;
       
       for (int i = 0; i < doseUsageTimes.length; i++) {
-        if (doseUsageTimes[i] == usageTime) {
+        final doseUsageTime = doseUsageTimes[i];
+        
+        // Check: if usageTime is "Diğer", match non-standard times; otherwise match exact
+        final shouldInclude = usageTime == 'Diğer'
+            ? !standardTimes.contains(doseUsageTime)
+            : doseUsageTime == usageTime;
+        
+        if (shouldInclude) {
           final timeStr = '${doseTimes[i].hour.toString().padLeft(2, '0')}:${doseTimes[i].minute.toString().padLeft(2, '0')}';
           medications.add(
             MedicationCardData(
@@ -44,7 +54,11 @@ class _MedicationScreenState extends State<MedicationScreen> {
               icon: Icons.medication,
               iconColor: Colors.blue.shade300,
               dosageColor: Colors.blue,
-              isTaken: false,
+              isTaken: (med['takenFlags'] != null && (med['takenFlags'] as List).length > i)
+                  ? (med['takenFlags'] as List)[i] as bool
+                  : false,
+              parentIndex: medIndex,
+              doseIndex: i,
             ),
           );
         }
@@ -92,12 +106,21 @@ class _MedicationScreenState extends State<MedicationScreen> {
                 _selectedDate = date;
               });
             },
+            progress: _computeProgress(),
+            takenLabel: _computeTakenLabel(),
+            nextDoseLabel: _computeNextDoseLabel(),
           ),
           const SizedBox(height: 24),
           if (_getMedicationsForSection('Sabah').isNotEmpty) ...[
             MedicationSection(
               title: 'Sabah',
               medications: _getMedicationsForSection('Sabah'),
+              onToggle: (data) {
+                setState(() {
+                  final current = _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] as bool;
+                  _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] = !current;
+                });
+              },
             ),
             const SizedBox(height: 16),
           ],
@@ -105,6 +128,12 @@ class _MedicationScreenState extends State<MedicationScreen> {
             MedicationSection(
               title: 'Öğle',
               medications: _getMedicationsForSection('Öğle'),
+              onToggle: (data) {
+                setState(() {
+                  final current = _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] as bool;
+                  _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] = !current;
+                });
+              },
             ),
             const SizedBox(height: 16),
           ],
@@ -112,6 +141,25 @@ class _MedicationScreenState extends State<MedicationScreen> {
             MedicationSection(
               title: 'Akşam',
               medications: _getMedicationsForSection('Akşam'),
+              onToggle: (data) {
+                setState(() {
+                  final current = _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] as bool;
+                  _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] = !current;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (_getMedicationsForSection('Diğer').isNotEmpty) ...[
+            MedicationSection(
+              title: 'Diğer',
+              medications: _getMedicationsForSection('Diğer'),
+              onToggle: (data) {
+                setState(() {
+                  final current = _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] as bool;
+                  _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] = !current;
+                });
+              },
             ),
           ],
         ],
@@ -126,6 +174,9 @@ class _MedicationScreenState extends State<MedicationScreen> {
           );
           if (result != null) {
             setState(() {
+              // initialize taken flags per dose for tracking
+              final int totalDoses = (result['doseAmounts'] as List?)?.length ?? (result['doseUsageTimes'] as List?)?.length ?? 0;
+              result['takenFlags'] = List<bool>.filled(totalDoses, false);
               _savedMedications.add(result);
             });
           }
@@ -147,5 +198,91 @@ class _MedicationScreenState extends State<MedicationScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
+  }
+
+  double _computeProgress() {
+    int total = 0;
+    int taken = 0;
+    for (final med in _savedMedications) {
+      final flags = med['takenFlags'] as List?;
+      if (flags != null) {
+        total += flags.length;
+        for (final f in flags) {
+          if (f == true) taken++;
+        }
+      } else {
+        final amounts = med['doseAmounts'] as List?;
+        if (amounts != null) total += amounts.length;
+      }
+    }
+    if (total == 0) return 0.0;
+    return taken / total;
+  }
+
+  String _computeTakenLabel() {
+    int total = 0;
+    int taken = 0;
+    for (final med in _savedMedications) {
+      final flags = med['takenFlags'] as List?;
+      if (flags != null) {
+        total += flags.length;
+        for (final f in flags) {
+          if (f == true) taken++;
+        }
+      } else {
+        final amounts = med['doseAmounts'] as List?;
+        if (amounts != null) total += amounts.length;
+      }
+    }
+    return '$taken/$total İlaç Alındı';
+  }
+
+  String _computeNextDoseLabel() {
+    int total = 0;
+    int taken = 0;
+    TimeOfDay? nextUntakenTime;
+    
+    // Tüm ilaçlardan saatler ve taken durumunu kontrol et
+    for (final med in _savedMedications) {
+      final doseTimes = med['doseTimes'] as List<TimeOfDay>?;
+      final flags = med['takenFlags'] as List?;
+      
+      if (doseTimes != null) {
+        for (int i = 0; i < doseTimes.length; i++) {
+          final isTaken = flags != null && i < flags.length ? flags[i] == true : false;
+          total++;
+          
+          if (isTaken) {
+            taken++;
+          } else {
+            // Alınmamış ilaç — en yakın saati bul
+            final time = doseTimes[i];
+            if (nextUntakenTime == null || 
+                time.hour < nextUntakenTime.hour ||
+                (time.hour == nextUntakenTime.hour && time.minute < nextUntakenTime.minute)) {
+              nextUntakenTime = time;
+            }
+          }
+        }
+      }
+    }
+    
+    // Case 1: Hiç ilaç alınmadı
+    if (taken == 0) {
+      return 'Hiç İlaç Alınmadı';
+    }
+    
+    // Case 2: Tüm ilaçlar alındı
+    if (taken == total) {
+      return 'Tüm İlaçlar Alındı';
+    }
+    
+    // Case 3: Sonraki alınmamış ilaç saati
+    if (nextUntakenTime != null) {
+      final timeStr = '${nextUntakenTime.hour.toString().padLeft(2, '0')}:${nextUntakenTime.minute.toString().padLeft(2, '0')}';
+      return "Sonraki doz: $timeStr'de";
+    }
+    
+    return 'Tüm İlaçlar Alındı';
   }
 }
