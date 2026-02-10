@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "743537463259",
+    "project_id": "insula-81384",
+    "storage_bucket": "insula-81384.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:743537463259:android:c00365d5c7c691fc2aa1fe",
+        "android_client_info": {
+          "package_name": "com.example.insula"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRk0gtVyY-UuO3xl4jDNAaP7GrqrUxBvQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
