@@ -1,6 +1,7 @@
 // presentation/widgets/custom_side_drawer.dart
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:insula/logic/viewmodels/auth_viewmodel.dart';
 
 class CustomSideDrawer extends StatelessWidget {
   const CustomSideDrawer({super.key});
@@ -34,11 +35,21 @@ class CustomSideDrawer extends StatelessWidget {
             child: Divider(thickness: 1),
           ),
 
-          // Çıkış Yap - Temadaki Turuncu/Kırmızı (Tertiary) rengini kullanabiliriz
+          // Çıkış Yap
           _buildDrawerItem(
             Icons.logout_rounded, 
             "Çıkış Yap", 
-            () {}, 
+            () async {
+              // 1. Drawer'ı kapat
+              Navigator.of(context).pop();
+              
+              // 2. Çıkış yap
+              await AuthViewModel().signOut();
+              
+              // 3. (Opsiyonel ama güvenli) Eğer StreamBuilder tetiklenmezse diye manuel yönlendirme yapılabilir.
+              // Ancak StreamBuilder tetiklendiğinde zaten sayfa değişecektir.
+              // Drawer kapatıldığı için kullanıcı alttaki sayfanın değiştiğini görecektir.
+            }, 
             color: AppColors.tertiary 
           ),
 
