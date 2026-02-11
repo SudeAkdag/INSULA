@@ -9,14 +9,13 @@ class HistorySummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        // Colors.cyan.shade50 yerine AppColors'tan bir yüzey rengi veya yumuşak bir ton kullanıyoruz
         color: AppColors.surfaceLight, 
         borderRadius: BorderRadius.circular(20),
-        // Border rengini de temadan çekiyoruz
         border: Border.all(color: AppColors.backgroundLight),
         boxShadow: [
           BoxShadow(
-            color: AppColors.secondary.withAlpha(50),
+            // withAlpha yerine modern withValues kullanıldı
+            color: AppColors.secondary.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -24,20 +23,21 @@ class HistorySummaryCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
+           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 "BU AY ÖZETİ", 
                 style: TextStyle(
                   fontWeight: FontWeight.bold, 
                   fontSize: 12,
-                  color: AppColors.secondary, // Ana koyu renk
+                  color: AppColors.secondary, 
                 )
               ),
-              const Icon(
+              Icon(
                 Icons.calendar_month, 
-                color: Colors.cyan, // Vurgu rengi olarak AppColors.primary da seçilebilir
+                // Sabit Colors.cyan yerine AppColors.primary kullanıldı
+                color: AppColors.primary, 
               ),
             ],
           ),
@@ -47,8 +47,8 @@ class HistorySummaryCard extends StatelessWidget {
             children: [
               _statItem("Egzersiz", "12"),
               _statItem("Kalori", "4,200"),
-              // Ort. Düşüş vurgusu için AppColors içindeki ana rengi veya cyan tonunu kullanıyoruz
-              _statItem("Ort. Düşüş", "25 mg/dL", valueColor: Colors.cyan),
+              // Vurgu rengi AppColors.primary olarak güncellendi
+              _statItem("Ort. Düşüş", "25 mg/dL", valueColor: AppColors.primary),
             ],
           ),
         ],
@@ -60,11 +60,11 @@ class HistorySummaryCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+         Text(
           label, 
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10, 
-            color: AppColors.textSecLight, // İkincil metin rengi (Gri tonları)
+            color: AppColors.textSecLight, 
           )
         ),
         Text(
@@ -72,7 +72,7 @@ class HistorySummaryCard extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.bold, 
             fontSize: 16, 
-            color: valueColor ?? AppColors.secondary, // Değer rengi
+            color: valueColor ?? AppColors.secondary, 
           )
         ),
       ],

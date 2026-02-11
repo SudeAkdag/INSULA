@@ -18,7 +18,10 @@ class ExerciseHistoryScreen extends StatelessWidget {
         ),
         title: const Text(
           "Tamamlanan Egzersizler",
-          style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.secondary, 
+            fontWeight: FontWeight.bold
+          ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -29,14 +32,21 @@ class ExerciseHistoryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const HistorySummaryCard(), // Üst özet kartı
+             HistorySummaryCard(), // Üst özet kartı
             const SizedBox(height: 24),
             
             // Filtreleme butonları (Hepsi, Yürüyüş, Koşu...)
             _buildFilterRow(),
             
             const SizedBox(height: 24),
-            const Text("Bugün", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              "Bugün", 
+              style: TextStyle(
+                fontWeight: FontWeight.bold, 
+                fontSize: 16,
+                color: AppColors.secondary // Başlık rengi AppColors'tan alındı
+              )
+            ),
             const SizedBox(height: 12),
             const HistoryActivityTile(
               title: "Sabah Yürüyüşü",
@@ -48,7 +58,14 @@ class ExerciseHistoryScreen extends StatelessWidget {
             ),
             
             const SizedBox(height: 24),
-            const Text("Dün", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              "Dün", 
+              style: TextStyle(
+                fontWeight: FontWeight.bold, 
+                fontSize: 16,
+                color: AppColors.secondary
+              )
+            ),
             const SizedBox(height: 12),
             const HistoryActivityTile(
               title: "Bisiklet Sürüşü",
@@ -60,7 +77,14 @@ class ExerciseHistoryScreen extends StatelessWidget {
             ),
             
             const SizedBox(height: 24),
-            const Text("Bu Hafta", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              "Bu Hafta", 
+              style: TextStyle(
+                fontWeight: FontWeight.bold, 
+                fontSize: 16,
+                color: AppColors.secondary
+              )
+            ),
             const SizedBox(height: 12),
             const FeaturedHistoryCard(), // Resimli sahil koşusu kartı
           ],
@@ -90,8 +114,21 @@ class ExerciseHistoryScreen extends StatelessWidget {
         label: Text(label),
         selected: isSelected,
         onSelected: (val) {},
-        selectedColor: Colors.cyan.shade400,
-        labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.secondary),
+        // Renkler tamamen AppColors üzerinden yönetiliyor
+        selectedColor: AppColors.primary, 
+        backgroundColor: AppColors.surfaceLight,
+        checkmarkColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: isSelected ? AppColors.primary : AppColors.backgroundLight,
+          ),
+        ),
+        labelStyle: TextStyle(
+          color: isSelected ? Colors.white : AppColors.secondary,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
       ),
     );
   }

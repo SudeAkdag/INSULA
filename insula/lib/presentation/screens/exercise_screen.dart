@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:insula/presentation/screens/add_exercise_screen.dart'; 
-import 'package:insula/presentation/screens/exercise_history_screen.dart'; // Yeni import
+import 'package:insula/presentation/screens/exercise_history_screen.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/exercise_model.dart';
 import '../widgets/exercise/exercise_summary_card.dart';
@@ -13,7 +13,6 @@ class ExerciseScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Bugünün örnek verileri (Veritabanı bağlandığında buradan çekilecek)
     final List<ExerciseModel> todayActivities = [
       ExerciseModel(id: "1", activityName: "Yürüyüş", durationMinutes: 30, date: DateTime.now()),
       ExerciseModel(id: "2", activityName: "Ağırlık", durationMinutes: 15, date: DateTime.now()),
@@ -35,7 +34,6 @@ class ExerciseScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Üst Özet Kartları
             const Row(
               children: [
                 Expanded(child: ExerciseSummaryCard(value: "450", label: "YAKILAN (KCAL)", icon: Icons.local_fire_department)),
@@ -44,33 +42,20 @@ class ExerciseScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            const ExerciseSummaryCard(value: "Orta", label: "YOĞUNLUK", icon: Icons.favorite, isFullWidth: true),
+            const ExerciseSummaryCard(value: "Orta", label: " GÜN İÇİ YOĞUNLUK", icon: Icons.favorite, isFullWidth: true),
             
             const SizedBox(height: 24),
             
-            // Haftalık Aktivite Grafiği
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Haftalık Aktivite", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.secondary)),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.green.withAlpha(30), borderRadius: BorderRadius.circular(12)),
-                  child: const Text("+6%", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+            // Sadece Widget'ı Çağırıyoruz, İçindeki Hesaplamalar Otomatik Çalışır
             const ExerciseChart(),
 
             const SizedBox(height: 24),
-            const SugarWarningCard(), // Şeker Kontrolü uyarısı
+            const SugarWarningCard(),
             
             const SizedBox(height: 24),
             const Text("Bugünkü Hareketlerin", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.secondary)),
             const SizedBox(height: 12),
 
-            // Bugünün Aktiviteleri Listesi
             Column(
               children: todayActivities.map((exercise) => ExerciseActivityTile(
                 title: " ${exercise.activityName}",
@@ -82,7 +67,6 @@ class ExerciseScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // GEÇMİŞ EGZERSİZLER BUTONU (Görsel 16aa7a.png'deki gibi)
             GestureDetector(
               onTap: () {
                 Navigator.push(
@@ -101,7 +85,7 @@ class ExerciseScreen extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.backgroundLight,
                         shape: BoxShape.circle,
                       ),
@@ -119,12 +103,11 @@ class ExerciseScreen extends StatelessWidget {
               ),
             ),
             
-            const SizedBox(height: 100), // FAB için boşluk
+            const SizedBox(height: 100),
           ],
         ),
       ),
       
-      // Egzersiz Ekleme Sayfasına Yönlendiren Buton
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
@@ -132,7 +115,7 @@ class ExerciseScreen extends StatelessWidget {
             MaterialPageRoute(builder: (context) => const AddExerciseScreen()),
           );
         },
-        backgroundColor: const Color(0xFFFFC107),
+        backgroundColor: AppColors.primary, // AppColors'tan Sarı Tonu
         icon: const Icon(Icons.add, color: AppColors.secondary, size: 24),
         label: const Text(
           "Egzersiz Ekle", 

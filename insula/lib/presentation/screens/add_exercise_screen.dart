@@ -17,6 +17,9 @@ class AddExerciseScreen extends StatefulWidget {
 class _AddExerciseScreenState extends State<AddExerciseScreen> {
   double _duration = 45;
   String _selectedActivity = "Yürüyüş";
+  
+  // Şeker girişi için kontrolcü tanımlandı
+  final TextEditingController _glucoseController = TextEditingController();
 
   final List<Map<String, dynamic>> _activities = [
     {"label": "Yürüyüş", "icon": Icons.directions_walk},
@@ -26,9 +29,51 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
     {"label": "Bisiklet", "icon": Icons.directions_bike},
   ];
 
+  // Şeker alanı boşsa gösterilecek uyarı pop-up'ı
+  void _handleSave() async {
+    if (_glucoseController.text.trim().isEmpty) {
+      final bool? proceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text("Şeker Verisi Eksik"),
+          content: const Text(
+            "Şeker girme alanını doldurmazsanız egzersiz öncesi şeker verinizi kaydedemezsiniz. Devam etmek istiyor musunuz?"
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false), // Geri dön
+              child: const Text("Geri Dön", style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true), // Devam et
+              child: const Text(
+                "Devam Et", 
+                style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)
+              ),
+            ),
+          ],
+        ),
+      );
+
+      // Eğer kullanıcı pop-up'ta "Devam Et" dediyse ekrandan çık
+      if (proceed == true && mounted) {
+        Navigator.pop(context);
+      }
+    } else {
+      // Şeker girilmişse direkt kaydet ve çık
+      Navigator.pop(context);
+    }
+  }
+
+  @override
+  void dispose() {
+    _glucoseController.dispose(); // Bellek sızıntısını önlemek için
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Hesaplama mantığını modelden çekiyoruz
     final calcModel = ExerciseModel(
       id: '',
       activityName: _selectedActivity,
@@ -56,7 +101,6 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
             const Text("AKTİVİTE TÜRÜ", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 16),
             
-            // Aktivite Seçici (Ayrı Widget)
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -71,7 +115,6 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
 
             const SizedBox(height: 32),
 
-            // Süre Seçici (Widget'a taşındı)
             DurationSelectorCard(
               duration: _duration,
               onChanged: (val) => setState(() => _duration = val),
@@ -79,12 +122,11 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
 
             const SizedBox(height: 32),
 
-            // Kan Şekeri Alanı (Widget'a taşındı)
-            const GlucoseInputGroup(),
+            // Şeker giriş grubu kontrolcü ile bağlandı
+            GlucoseInputGroup(controller: _glucoseController),
 
             const SizedBox(height: 32),
 
-            // Kalori Özeti (Widget'a taşındı)
             CalorieSummaryCard(
               calories: calcModel.estimatedCalories,
               intensity: calcModel.intensityLevel,
@@ -94,7 +136,7 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
 
             // Kaydet Butonu
             ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: _handleSave, // Kontrollü kayıt fonksiyonuna bağlandı
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 minimumSize: const Size(double.infinity, 60),

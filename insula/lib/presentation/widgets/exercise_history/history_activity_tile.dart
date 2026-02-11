@@ -27,23 +27,41 @@ class HistoryActivityTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.secondary.withValues(alpha: 0.05), 
+            blurRadius: 10
+          )
+        ],
       ),
       child: Column(
         children: [
           Row(
             children: [
-              const CircleAvatar(
-                backgroundColor: Color(0xFFE0F7FA),
-                child: Icon(Icons.directions_walk, color: Colors.cyan),
+              CircleAvatar(
+                // Koyu mavi tonu (secondary) arka plan için çok açık kullanıldı
+                backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
+                child: const Icon(Icons.directions_walk, color: AppColors.secondary),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                    Text(time, style: const TextStyle(fontSize: 10, color: AppColors.textSecLight)),
+                    Text(
+                      title, 
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        color: AppColors.secondary
+                      )
+                    ),
+                    Text(
+                      time, 
+                      style: const TextStyle(
+                        fontSize: 10, 
+                        color: AppColors.textSecLight
+                      )
+                    ),
                   ],
                 ),
               ),
@@ -51,24 +69,41 @@ class HistoryActivityTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDecrease ? Colors.green.withAlpha(20) : Colors.orange.withAlpha(20),
+                  // Azalma durumunda koyu mavi (secondary), artışta turuncu (tertiary)
+                  color: isDecrease 
+                      ? AppColors.secondary.withValues(alpha: 0.1) 
+                      : AppColors.tertiary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   children: [
-                    const Text("KAN ŞEKERİ", style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.cyan)),
+                    Text(
+                      "KAN ŞEKERİ", 
+                      style: TextStyle(
+                        fontSize: 7, 
+                        fontWeight: FontWeight.bold, 
+                        color: isDecrease ? AppColors.secondary : AppColors.tertiary
+                      )
+                    ),
                     Text(
                       glucoseChange, 
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isDecrease ? Colors.green : Colors.orange)
+                      style: TextStyle(
+                        fontSize: 11, 
+                        fontWeight: FontWeight.bold, 
+                        color: isDecrease ? AppColors.secondary : AppColors.tertiary
+                      )
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12.0),
-            child: Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Divider(
+              height: 1, 
+              color: AppColors.backgroundLight 
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -77,7 +112,14 @@ class HistoryActivityTile extends StatelessWidget {
               _infoItem(Icons.local_fire_department_outlined, calories),
               TextButton(
                 onPressed: () {},
-                child: const Text("DETAYLAR >", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.cyan)),
+                child: const Text(
+                  "DETAYLAR >", 
+                  style: TextStyle(
+                    fontSize: 11, 
+                    fontWeight: FontWeight.bold, 
+                    color: AppColors.secondary // Buton rengi koyu mavi yapıldı
+                  )
+                ),
               ),
             ],
           ),
@@ -89,9 +131,16 @@ class HistoryActivityTile extends StatelessWidget {
   Widget _infoItem(IconData icon, String label) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey),
+        Icon(icon, size: 16, color: AppColors.textSecLight), 
         const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.secondary, fontWeight: FontWeight.w500)),
+        Text(
+          label, 
+          style: const TextStyle(
+            fontSize: 12, 
+            color: AppColors.secondary, 
+            fontWeight: FontWeight.w500
+          )
+        ),
       ],
     );
   }
