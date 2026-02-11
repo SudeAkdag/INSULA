@@ -15,14 +15,14 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authViewModel = AuthViewModel();
-  
+
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
-  
+
   DateTime? _selectedDate;
-  String _selectedGender = 'Male';
-  final List<String> _genders = ['Male', 'Female', 'Other'];
-  
+  String _selectedGender = 'Erkek';
+  final List<String> _genders = ['Erkek', 'Kadın', 'Diğer'];
+
   bool _isLoading = false;
 
   void _completeSetup() async {
@@ -41,7 +41,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             height: double.parse(_heightController.text.trim()),
             weight: double.parse(_weightController.text.trim()),
           );
-          
+
           if (mounted) {
             // Navigate to Main Screen and remove all previous routes
             Navigator.of(context).pushAndRemoveUntil(
@@ -65,7 +65,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       }
     } else if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your birth date')),
+        const SnackBar(content: Text('Doğum tarihinizi seçin')),
       );
     }
   }
@@ -104,11 +104,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
-          'Setup Profile',
+          'Profil Ayarları',
           style: AppTextStyles.h1.copyWith(fontSize: 20),
         ),
         centerTitle: true,
-        automaticallyImplyLeading: false, 
+        automaticallyImplyLeading: false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -118,24 +118,27 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Tell us about yourself',
+                'Bize kendiniz hakkında biraz bilgi verin',
                 style: AppTextStyles.h1.copyWith(fontSize: 24),
               ),
               const SizedBox(height: 8),
               Text(
-                'This information helps us personalize your health journey.',
-                style: AppTextStyles.body.copyWith(color: AppColors.textSecLight),
+                'Bu bilgiler, sağlık yolculuğunuzu kişiselleştirmemize yardımcı olur.',
+                style:
+                    AppTextStyles.body.copyWith(color: AppColors.textSecLight),
               ),
               const SizedBox(height: 32),
-              
+
               // Birth Date
-              Text('Birth Date', style: AppTextStyles.label.copyWith(fontSize: 14)),
+              Text('Doğum Tarihi',
+                  style: AppTextStyles.label.copyWith(fontSize: 14)),
               const SizedBox(height: 8),
               InkWell(
                 onTap: () => _selectDate(context),
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceLight,
                     borderRadius: BorderRadius.circular(16),
@@ -143,14 +146,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today, color: AppColors.secondary.withOpacity(0.7)),
+                      Icon(Icons.calendar_today,
+                          color: AppColors.secondary.withOpacity(0.7)),
                       const SizedBox(width: 12),
                       Text(
                         _selectedDate == null
-                            ? 'Select Date'
+                            ? 'Tarih Seçin'
                             : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
                         style: AppTextStyles.body.copyWith(
-                          color: _selectedDate == null ? Colors.grey : AppColors.textMainLight,
+                          color: _selectedDate == null
+                              ? Colors.grey
+                              : AppColors.textMainLight,
                         ),
                       ),
                     ],
@@ -160,7 +166,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               const SizedBox(height: 24),
 
               // Gender
-              Text('Gender', style: AppTextStyles.label.copyWith(fontSize: 14)),
+              Text('Cinsiyet',
+                  style: AppTextStyles.label.copyWith(fontSize: 14)),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -173,13 +180,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   child: DropdownButton<String>(
                     value: _selectedGender,
                     isExpanded: true,
-                    icon: const Icon(Icons.arrow_drop_down, color: AppColors.secondary),
+                    icon: const Icon(Icons.arrow_drop_down,
+                        color: AppColors.secondary),
                     onChanged: (String? newValue) {
                       setState(() {
                         _selectedGender = newValue!;
                       });
                     },
-                    items: _genders.map<DropdownMenuItem<String>>((String value) {
+                    items:
+                        _genders.map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value, style: AppTextStyles.body),
@@ -189,7 +198,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Height & Weight
               Row(
                 children: [
@@ -197,7 +206,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Height (cm)', style: AppTextStyles.label.copyWith(fontSize: 14)),
+                        Text('Boy (cm)',
+                            style: AppTextStyles.label.copyWith(fontSize: 14)),
                         const SizedBox(height: 8),
                         _buildTextField(
                           controller: _heightController,
@@ -213,7 +223,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Weight (kg)', style: AppTextStyles.label.copyWith(fontSize: 14)),
+                        Text('Kilo (kg)',
+                            style: AppTextStyles.label.copyWith(fontSize: 14)),
                         const SizedBox(height: 8),
                         _buildTextField(
                           controller: _weightController,
@@ -228,7 +239,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               ),
 
               const SizedBox(height: 48),
-              
+
               // Complete Button
               SizedBox(
                 width: double.infinity,
@@ -244,9 +255,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     ),
                   ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: AppColors.secondary)
+                      ? const CircularProgressIndicator(
+                          color: AppColors.secondary)
                       : const Text(
-                          'Continue',
+                          'Devam Et',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -276,12 +288,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
-        validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+        validator: (value) =>
+            value == null || value.isEmpty ? 'Gerekli alan' : null,
         decoration: InputDecoration(
           hintText: hint,
           prefixIcon: Icon(icon, color: AppColors.secondary.withOpacity(0.7)),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );

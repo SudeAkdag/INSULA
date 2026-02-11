@@ -60,15 +60,15 @@ class AuthViewModel {
     required double weight,
     // required String diabetesType, // Kept for future or if needed in this step
   }) async {
-    await _firestore.collection('users').doc(uid).update({
+    await _firestore.collection('users').doc(uid).set({
       'birthDate': Timestamp.fromDate(birthDate),
       'gender': gender,
       'height': height,
       'weight': weight,
-      // 'diabetesType': diabetesType, // If we want to add it back
+      // 'diabetesType': diabetesType,
       'profileComplete': true,
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    }, SetOptions(merge: true));
   }
   
   // Check if profile is complete
