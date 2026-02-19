@@ -5,11 +5,18 @@ import 'medication_card_data.dart';
 
 /// Tek bir ilacı liste öğesi olarak gösteren kart.
 /// İlaç adı, doz, saat ve alındı (checkbox) bilgisini içerir.
+/// Kartın sol kısmına tıklanınca detay sayfasına gider, checkbox'a tıklanınca alındı işaretlenir.
 class MedicationCard extends StatelessWidget {
   final MedicationCardData medication;
   final ValueChanged<MedicationCardData>? onToggle;
+  final ValueChanged<MedicationCardData>? onTap;
 
-  const MedicationCard({super.key, required this.medication, this.onToggle});
+  const MedicationCard({
+    super.key,
+    required this.medication,
+    this.onToggle,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,47 +36,57 @@ class MedicationCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: medication.iconColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              medication.icon,
-              color: medication.iconColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  medication.name,
-                  style: AppTextStyles.body.copyWith(
-                    fontWeight: FontWeight.bold,
+            child: GestureDetector(
+              onTap: onTap != null ? () => onTap!(medication) : null,
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: medication.iconColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      medication.icon,
+                      color: medication.iconColor,
+                      size: 24,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      medication.dosage,
-                      style: AppTextStyles.label.copyWith(
-                        color: medication.dosageColor,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          medication.name,
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Text(
+                              medication.dosage,
+                              style: AppTextStyles.label.copyWith(
+                                color: medication.dosageColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              ' • +${medication.time}',
+                              style: AppTextStyles.label,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    Text(
-                      ' • +${medication.time}',
-                      style: AppTextStyles.label,
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
           GestureDetector(

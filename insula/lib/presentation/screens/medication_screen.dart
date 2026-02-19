@@ -8,6 +8,7 @@ import '../widgets/medication/medication_progress_card.dart';
 import '../widgets/medication/medication_section.dart';
 import '../widgets/medication/medication_card_data.dart';
 import 'add_medication_screen.dart';
+import 'medication_detail_screen.dart';
 
 class MedicationScreen extends StatefulWidget {
   const MedicationScreen({super.key});
@@ -24,6 +25,32 @@ class _MedicationScreenState extends State<MedicationScreen> {
   void initState() {
     super.initState();
     _selectedDate = DateTime.now();
+  }
+
+  void _navigateToMedicationDetail(MedicationCardData data) {
+    final medication = _savedMedications[data.parentIndex];
+    final medicationIndex = data.parentIndex;
+    Navigator.push(
+      context,
+      MaterialPageRoute<dynamic>(
+        builder: (context) => MedicationDetailScreen(medication: medication),
+      ),
+    ).then((result) {
+      if (!mounted) return;
+      
+      if (result == true) {
+        // İlaç silindi
+        setState(() {
+          _savedMedications.removeAt(medicationIndex);
+        });
+      } else if (result is Map<String, dynamic>) {
+        // İlaç güncellendi
+        setState(() {
+          // takenFlags zaten AddMedicationScreen'de ayarlanmış olmalı
+          _savedMedications[medicationIndex] = result;
+        });
+      }
+    });
   }
 
   List<MedicationCardData> _getMedicationsForSection(String usageTime) {
@@ -121,6 +148,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
                   _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] = !current;
                 });
               },
+              onMedicationTap: _navigateToMedicationDetail,
             ),
             const SizedBox(height: 16),
           ],
@@ -134,6 +162,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
                   _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] = !current;
                 });
               },
+              onMedicationTap: _navigateToMedicationDetail,
             ),
             const SizedBox(height: 16),
           ],
@@ -147,6 +176,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
                   _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] = !current;
                 });
               },
+              onMedicationTap: _navigateToMedicationDetail,
             ),
             const SizedBox(height: 16),
           ],
@@ -160,6 +190,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
                   _savedMedications[data.parentIndex]['takenFlags'][data.doseIndex] = !current;
                 });
               },
+              onMedicationTap: _navigateToMedicationDetail,
             ),
           ],
         ],

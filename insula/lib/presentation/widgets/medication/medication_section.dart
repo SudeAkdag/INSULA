@@ -10,12 +10,14 @@ class MedicationSection extends StatelessWidget {
   final String title;
   final List<MedicationCardData> medications;
   final ValueChanged<MedicationCardData>? onToggle;
+  final ValueChanged<MedicationCardData>? onMedicationTap;
 
   const MedicationSection({
     super.key,
     required this.title,
     required this.medications,
     this.onToggle,
+    this.onMedicationTap,
   });
 
   @override
@@ -31,7 +33,11 @@ class MedicationSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ...medications.map((med) => MedicationCard(medication: med, onToggle: onToggle)),
+        ...medications.map((med) => MedicationCard(
+          medication: med,
+          onToggle: onToggle,
+          onTap: onMedicationTap,
+        )),
       ],
     );
   }

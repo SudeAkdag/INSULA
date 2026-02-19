@@ -15,7 +15,9 @@ import '../widgets/add_medication/bottom_sheets/dose_amount_bottom_sheet.dart';
 import '../widgets/add_medication/bottom_sheets/dosage_selection_bottom_sheet.dart';
 
 class AddMedicationScreen extends StatefulWidget {
-  const AddMedicationScreen({super.key});
+  final Map<String, dynamic>? medication;
+
+  const AddMedicationScreen({super.key, this.medication});
 
   @override
   State<AddMedicationScreen> createState() => _AddMedicationScreenState();
@@ -38,7 +40,52 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeDoses();
+    if (widget.medication != null) {
+      _loadMedicationData();
+    } else {
+      _initializeDoses();
+    }
+  }
+
+  void _loadMedicationData() {
+    final med = widget.medication!;
+    _nameController.text = med['name'] as String? ?? '';
+    _medicationType = med['medicationType'] as String? ?? 'Tür Seçiniz';
+    _dosage = med['dosage'] as String? ?? '10 mg';
+    _frequency = med['frequency'] as String? ?? 'Günde 1 kez';
+    _notesController.text = med['notes'] as String? ?? '';
+    
+    final doseTimes = med['doseTimes'] as List<TimeOfDay>?;
+    final doseAmounts = med['doseAmounts'] as List<String>?;
+    final doseUsageTimes = med['doseUsageTimes'] as List<String>?;
+    final doseConditions = med['doseConditions'] as List<String>?;
+    
+    if (doseTimes != null && doseTimes.isNotEmpty) {
+      _doseTimes = List<TimeOfDay>.from(doseTimes);
+      _doseAmounts = List<String>.from(doseAmounts ?? []);
+      _doseUsageTimes = List<String>.from(doseUsageTimes ?? []);
+      _doseConditions = List<String>.from(doseConditions ?? []);
+      
+      // Eksik verileri varsayılan değerlerle doldur
+      while (_doseAmounts.length < _doseTimes.length) {
+        _doseAmounts.add('1 Tablet');
+      }
+      while (_doseUsageTimes.length < _doseTimes.length) {
+        _doseUsageTimes.add('Sabah');
+      }
+      while (_doseConditions.length < _doseTimes.length) {
+        _doseConditions.add('Aç Karnına');
+      }
+      
+      // Eğer doseConditions boşsa veya geçersizse varsayılan değerlerle doldur
+      for (int i = 0; i < _doseConditions.length; i++) {
+        if (_doseConditions[i].isEmpty || _doseConditions[i] == 'Aç') {
+          _doseConditions[i] = 'Aç Karnına';
+        }
+      }
+    } else {
+      _initializeDoses();
+    }
   }
 
   void _initializeDoses() {
@@ -49,7 +96,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     );
     _doseAmounts = List.filled(doseCount, '1 Tablet');
     _doseUsageTimes = List.filled(doseCount, 'Sabah');
-    _doseConditions = List.filled(doseCount, 'Aç');
+    _doseConditions = List.filled(doseCount, 'Aç Karnına');
   }
 
   int _extractDoseCount(String frequency) {
@@ -90,7 +137,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     }
 
     // Build medication data from the form and dose cards
-    final medicationData = {
+    final medicationData = <String, dynamic>{
       'name': name,
       'medicationType': _medicationType,
       'dosage': _dosage,
@@ -101,6 +148,23 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       'doseConditions': _doseConditions,
       'notes': _notesController.text.trim(),
     };
+    
+    // Eğer düzenleme modundaysak ve takenFlags varsa koru, yoksa yeni oluştur
+    if (widget.medication != null && widget.medication!['takenFlags'] != null) {
+      final oldFlags = widget.medication!['takenFlags'] as List<bool>;
+      final newDoseCount = _doseTimes.length;
+      
+      // Eğer doz sayısı değiştiyse, takenFlags'ı yeniden boyutlandır
+      if (oldFlags.length == newDoseCount) {
+        medicationData['takenFlags'] = List<bool>.from(oldFlags);
+      } else {
+        // Doz sayısı değişti, yeni takenFlags oluştur
+        medicationData['takenFlags'] = List<bool>.filled(newDoseCount, false);
+      }
+    } else {
+      // Yeni ilaç ekleniyor, takenFlags oluştur
+      medicationData['takenFlags'] = List<bool>.filled(_doseTimes.length, false);
+    }
     
     Navigator.pop(context, medicationData);
   }
@@ -115,7 +179,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "İlaç Ekle",
+          widget.medication != null ? "İlaç Düzenle" : "İlaç Ekle",
           style: AppTextStyles.h1.copyWith(color: AppColors.secondary),
         ),
         centerTitle: true,
