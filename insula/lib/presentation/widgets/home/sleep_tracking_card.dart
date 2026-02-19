@@ -1,12 +1,11 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import '../../screens/water_tracking_screen.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 
-class WaterIntakeCard extends StatelessWidget {
-  const WaterIntakeCard({super.key});
+class SleepTrackingCard extends StatelessWidget {
+  const SleepTrackingCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,11 +13,11 @@ class WaterIntakeCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.secondary,
+        color: const Color(0xFF2C3E50), // Midnight Blue for sleep
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.secondary.withOpacity(0.3),
+            color: const Color(0xFF2C3E50).withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -34,7 +33,7 @@ class WaterIntakeCard extends StatelessWidget {
               width: 128,
               height: 128,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withOpacity(0.05),
                 shape: BoxShape.circle,
               ),
             ),
@@ -58,10 +57,17 @@ class WaterIntakeCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Su Tüketimi",
-                    style: AppTextStyles.h1
-                        .copyWith(color: Colors.white, fontSize: 18),
+                  Row(
+                    children: [
+                      const Icon(Icons.nightlight,
+                          color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Uyku Takibi",
+                        style: AppTextStyles.h1
+                            .copyWith(color: Colors.white, fontSize: 18),
+                      ),
+                    ],
                   ),
                   Container(
                     padding:
@@ -71,7 +77,7 @@ class WaterIntakeCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      "Hedef: 2.5L",
+                      "Hedef: 8s",
                       style: AppTextStyles.label.copyWith(color: Colors.white),
                     ),
                   ),
@@ -89,13 +95,13 @@ class WaterIntakeCard extends StatelessWidget {
                           textBaseline: TextBaseline.alphabetic,
                           children: [
                             Text(
-                              "1.2",
+                              "6.5",
                               style: AppTextStyles.h1
                                   .copyWith(color: Colors.white, fontSize: 36),
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              "Litre",
+                              "Saat",
                               style: AppTextStyles.body.copyWith(
                                   color: Colors.white.withOpacity(0.8)),
                             ),
@@ -105,10 +111,10 @@ class WaterIntakeCard extends StatelessWidget {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
-                            value: 0.48, // 1.2 / 2.5
+                            value: 0.81, // 6.5 / 8
                             backgroundColor: Colors.black.withOpacity(0.2),
                             valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppColors.primary),
+                                Color(0xFF9B59B6)), // Purple for sleep
                             minHeight: 8,
                           ),
                         ),
@@ -131,15 +137,8 @@ class WaterIntakeCard extends StatelessWidget {
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.add, color: AppColors.secondary),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const WaterTrackingScreen(),
-                          ),
-                        );
-                      },
+                      icon: const Icon(Icons.add, color: Color(0xFF2C3E50)),
+                      onPressed: () {},
                     ),
                   ),
                 ],

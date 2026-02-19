@@ -3,8 +3,7 @@ import 'package:insula/presentation/widgets/home/daily_summary_grid.dart';
 import 'package:insula/presentation/widgets/home/glucose_summary_card.dart';
 import 'package:insula/presentation/widgets/home/glucose_trend_card.dart';
 import 'package:insula/presentation/widgets/home/home_header.dart';
-import 'package:insula/presentation/widgets/home/quick_actions_row.dart';
-import 'package:insula/presentation/widgets/home/water_intake_card.dart';
+import 'package:insula/presentation/widgets/home/quick_actions_section.dart';
 import '../../core/theme/app_colors.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -24,9 +23,7 @@ class HomeScreen extends StatelessWidget {
               SizedBox(height: 12),
               GlucoseSummaryCard(),
               SizedBox(height: 12),
-              QuickActionsRow(),
-              SizedBox(height: 12),
-              WaterIntakeCard(),
+              QuickActionsSection(),
               SizedBox(height: 24),
               DailySummaryGrid(),
               GlucoseTrendCard(),
