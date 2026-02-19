@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import 'package:insula/logic/viewmodels/auth_viewmodel.dart';
+import 'package:insula/presentation/screens/profile_screen.dart';
 
 class CustomSideDrawer extends StatelessWidget {
   const CustomSideDrawer({super.key});
@@ -25,7 +26,12 @@ class CustomSideDrawer extends StatelessWidget {
           const SizedBox(height: 10),
 
           // Menü Elemanları
-          _buildDrawerItem(Icons.person_outline, "Profil", () {}),
+          _buildDrawerItem(Icons.person_outline, "Profil", () {
+            // Kapat drawer
+            Navigator.of(context).pop();
+            // Navigate to Profile screen
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          }),
           _buildDrawerItem(Icons.bar_chart_outlined, "Raporlar", () {}),
           _buildDrawerItem(Icons.settings_outlined, "Ayarlar", () {}),
           _buildDrawerItem(Icons.smart_toy_outlined, "Chatbot", () {}),
