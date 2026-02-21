@@ -6,7 +6,6 @@ import 'package:insula/presentation/screens/main_screen.dart';
 import 'core/theme/app_theme.dart'; // Temayı içe aktar
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:insula/logic/viewmodels/auth_viewmodel.dart';
-import 'package:insula/presentation/screens/auth/login_screen.dart';
 import 'package:insula/presentation/screens/auth/welcome_screen.dart';
 import 'package:insula/presentation/screens/auth/profile_setup_screen.dart';
 
@@ -47,7 +46,7 @@ class AuthWrapper extends StatelessWidget {
           if (user == null) {
             return const WelcomeScreen();
           }
-          
+
           // User is logged in, check profile completion
           return FutureBuilder<bool>(
             future: AuthViewModel().isProfileComplete(user.uid),
@@ -59,16 +58,16 @@ class AuthWrapper extends StatelessWidget {
                   ),
                 );
               }
-              
+
               if (profileSnapshot.hasData && profileSnapshot.data == true) {
                 return const MainScreen();
               }
-              
+
               return const ProfileSetupScreen();
             },
           );
         }
-        
+
         return const Scaffold(
           body: Center(
             child: CircularProgressIndicator(),

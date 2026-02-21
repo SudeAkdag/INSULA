@@ -1,3 +1,5 @@
+// ignore_for_file: curly_braces_in_flow_control_structures, deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';

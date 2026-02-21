@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:insula/core/theme/app_colors.dart';
 import 'package:insula/core/theme/app_text_styles.dart';
@@ -27,7 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      
+
       if (mounted) {
         // Navigasyon yığını temizle ve AuthWrapper'a (yani main'e) geri dön
         Navigator.of(context).popUntil((route) => route.isFirst);
@@ -86,13 +88,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
-            
+
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 children: [
                   const SizedBox(height: 40),
-                  
+
                   // Email Field
                   Container(
                     decoration: BoxDecoration(
@@ -110,15 +112,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _emailController,
                       decoration: InputDecoration(
                         hintText: 'E-posta',
-                        prefixIcon: Icon(Icons.email_outlined, color: AppColors.secondary),
+                        prefixIcon: Icon(Icons.email_outlined,
+                            color: AppColors.secondary),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Password Field
                   Container(
                     decoration: BoxDecoration(
@@ -137,15 +141,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       obscureText: true,
                       decoration: InputDecoration(
                         hintText: 'Şifre',
-                        prefixIcon: Icon(Icons.lock_outline, color: AppColors.secondary),
+                        prefixIcon: Icon(Icons.lock_outline,
+                            color: AppColors.secondary),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
-                  
+
                   // Login Button
                   SizedBox(
                     width: double.infinity,
@@ -161,7 +167,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       child: _isLoading
-                          ? const CircularProgressIndicator(color: AppColors.secondary)
+                          ? const CircularProgressIndicator(
+                              color: AppColors.secondary)
                           : const Text(
                               'GİRİŞ YAP',
                               style: TextStyle(
@@ -172,22 +179,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Register Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         'Hesabınız yok mu? ',
-                        style: AppTextStyles.body.copyWith(color: AppColors.textSecLight),
+                        style: AppTextStyles.body
+                            .copyWith(color: AppColors.textSecLight),
                       ),
                       GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                            MaterialPageRoute(
+                                builder: (context) => const RegisterScreen()),
                           );
                         },
                         child: Text(

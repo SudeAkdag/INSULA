@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_final_fields, deprecated_member_use
+
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
@@ -194,7 +196,6 @@ class _WaterTrackingScreenState extends State<WaterTrackingScreen>
                     height: 56,
                     child: ElevatedButton(
                       onPressed: () {
-                        // TODO: Open manual input dialog
                         _addWater(100);
                       },
                       style: ElevatedButton.styleFrom(
