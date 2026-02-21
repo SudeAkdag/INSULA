@@ -1,135 +1,198 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../widgets/exercise_history/history_summary_card.dart';
-import '../widgets/exercise_history/history_activity_tile.dart';
-import '../widgets/exercise_history/featured_history_card.dart';
+import 'package:insula/data/services/exercise_service.dart';
+import 'package:insula/data/models/exercise_model.dart';
+import 'package:insula/presentation/widgets/exercise_history/history_activity_tile.dart';
+import 'package:insula/presentation/widgets/exercise_history/history_summary_card.dart';
+import '../../../../core/theme/app_colors.dart';
 
-class ExerciseHistoryScreen extends StatelessWidget {
+
+class ExerciseHistoryScreen extends StatefulWidget {
   const ExerciseHistoryScreen({super.key});
+
+  @override
+  State<ExerciseHistoryScreen> createState() => _ExerciseHistoryScreenState();
+}
+
+class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
+  final ExerciseService _exerciseService = ExerciseService();
+  String _selectedCategory = "Hepsi";
+
+  final List<Map<String, dynamic>> _categories = [
+    {"label": "Hepsi", "icon": Icons.check},
+    {"label": "Yürüyüş", "icon": null},
+    {"label": "Koşu", "icon": null},
+    {"label": "Bisiklet", "icon": null},
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.secondary),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: const Text(
           "Tamamlanan Egzersizler",
-          style: TextStyle(
-            color: AppColors.secondary, 
-            fontWeight: FontWeight.bold
-          ),
+          style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: AppColors.secondary),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-             HistorySummaryCard(), // Üst özet kartı
-            const SizedBox(height: 24),
-            
-            // Filtreleme butonları (Hepsi, Yürüyüş, Koşu...)
-            _buildFilterRow(),
-            
-            const SizedBox(height: 24),
-            const Text(
-              "Bugün", 
-              style: TextStyle(
-                fontWeight: FontWeight.bold, 
-                fontSize: 16,
-                color: AppColors.secondary // Başlık rengi AppColors'tan alındı
-              )
+      body: StreamBuilder<List<ExerciseModel>>(
+        stream: _exerciseService.getExercises(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+          }
+
+          List<ExerciseModel> allItems = snapshot.data ?? [];
+
+          // 1. Kategoriye göre filtreleme
+          if (_selectedCategory != "Hepsi") {
+            allItems = allItems.where((ex) => ex.activityName == _selectedCategory).toList();
+          }
+
+          // 2. Tarihlere göre gruplama mantığı
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          final yesterday = today.subtract(const Duration(days: 1));
+
+          final todayItems = allItems.where((ex) => _isSameDay(ex.date, today)).toList();
+          final yesterdayItems = allItems.where((ex) => _isSameDay(ex.date, yesterday)).toList();
+          final olderItems = allItems.where((ex) => ex.date.isBefore(yesterday)).toList();
+
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // GÖRSELDEKİ SABİT ÜST KISIM
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: HistorySummaryCard(),
+                ),
+
+                // KATEGORİ BARI (Özetin hemen altında)
+                _buildCategoryBar(),
+
+                const SizedBox(height: 16),
+
+                // GRUPLANMIŞ LİSTELER
+                if (todayItems.isNotEmpty) ...[
+                  _buildSectionHeader("Bugün"),
+                  ...todayItems.map((ex) => _buildHistoryTile(ex)),
+                ],
+
+                if (yesterdayItems.isNotEmpty) ...[
+                  _buildSectionHeader("Dün"),
+                  ...yesterdayItems.map((ex) => _buildHistoryTile(ex)),
+                ],
+
+                if (olderItems.isNotEmpty) ...[
+                  _buildSectionHeader("Daha Eski"),
+                  ...olderItems.map((ex) => _buildHistoryTile(ex)),
+                ],
+
+                if (allItems.isEmpty)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 40),
+                      child: Text("Kayıt bulunamadı.", style: TextStyle(color: Colors.grey)),
+                    ),
+                  ),
+
+                const SizedBox(height: 50),
+              ],
             ),
-            const SizedBox(height: 12),
-            const HistoryActivityTile(
-              title: "Sabah Yürüyüşü",
-              time: "Bugün, 08:30",
-              duration: "45 dk",
-              calories: "320 kcal",
-              glucoseChange: "140 ➔ 110",
-              isDecrease: true,
+          );
+        },
+      ),
+    );
+  }
+
+  // Kategori Barı Tasarımı (Görseldeki gibi Sarı/Beyaz Hap Stil)
+  Widget _buildCategoryBar() {
+    return SizedBox(
+      height: 45,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _categories.length,
+        itemBuilder: (context, index) {
+          final cat = _categories[index];
+          bool isSelected = _selectedCategory == cat['label'];
+
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategory = cat['label']),
+            child: Container(
+              margin: const EdgeInsets.only(right: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(
+                  color: isSelected ? AppColors.primary : AppColors.secondary.withOpacity(0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  if (cat['icon'] != null && isSelected) ...[
+                    Icon(cat['icon'], size: 16, color: AppColors.secondary),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(
+                    cat['label'],
+                    style: TextStyle(
+                      color: AppColors.secondary,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            
-            const SizedBox(height: 24),
-            const Text(
-              "Dün", 
-              style: TextStyle(
-                fontWeight: FontWeight.bold, 
-                fontSize: 16,
-                color: AppColors.secondary
-              )
-            ),
-            const SizedBox(height: 12),
-            const HistoryActivityTile(
-              title: "Bisiklet Sürüşü",
-              time: "Dün, 18:15",
-              duration: "30 dk",
-              calories: "450 kcal",
-              glucoseChange: "165 ➔ 125",
-              isDecrease: true,
-            ),
-            
-            const SizedBox(height: 24),
-            const Text(
-              "Bu Hafta", 
-              style: TextStyle(
-                fontWeight: FontWeight.bold, 
-                fontSize: 16,
-                color: AppColors.secondary
-              )
-            ),
-            const SizedBox(height: 12),
-            const FeaturedHistoryCard(), // Resimli sahil koşusu kartı
-          ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: AppColors.secondary,
         ),
       ),
     );
   }
 
-  Widget _buildFilterRow() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _filterChip("Hepsi", true),
-          _filterChip("Yürüyüş", false),
-          _filterChip("Koşu", false),
-          _filterChip("Bisiklet", false),
-        ],
+  Widget _buildHistoryTile(ExerciseModel ex) {
+    double diff = (ex.glucoseAfter ?? 0) - (ex.glucoseBefore ?? 0);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: HistoryActivityTile(
+        title: ex.activityName,
+        time: "${ex.date.day} ${_getMonthName(ex.date.month)}",
+        duration: "${ex.durationMinutes} dk",
+        calories: "${ex.estimatedCalories} kcal",
+        glucoseChange: diff == 0 ? "---" : "${diff.abs().toInt()} mg/dL",
+        isDecrease: diff <= 0,
       ),
     );
   }
 
-  Widget _filterChip(String label, bool isSelected) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (val) {},
-        // Renkler tamamen AppColors üzerinden yönetiliyor
-        selectedColor: AppColors.primary, 
-        backgroundColor: AppColors.surfaceLight,
-        checkmarkColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: isSelected ? AppColors.primary : AppColors.backgroundLight,
-          ),
-        ),
-        labelStyle: TextStyle(
-          color: isSelected ? Colors.white : AppColors.secondary,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-    );
+  bool _isSameDay(DateTime d1, DateTime d2) {
+    return d1.year == d2.year && d1.month == d2.month && d1.day == d2.day;
+  }
+
+  String _getMonthName(int month) {
+    const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    return months[month - 1];
   }
 }

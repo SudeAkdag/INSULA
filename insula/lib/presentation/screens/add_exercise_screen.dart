@@ -1,5 +1,5 @@
-// lib/presentation/screens/add_exercise_screen.dart
 import 'package:flutter/material.dart';
+import 'package:insula/data/services/exercise_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/exercise_model.dart';
 import '../widgets/add_exercise/activity_type_card.dart';
@@ -15,11 +15,11 @@ class AddExerciseScreen extends StatefulWidget {
 }
 
 class _AddExerciseScreenState extends State<AddExerciseScreen> {
+  final ExerciseService _exerciseService = ExerciseService();
+  final TextEditingController _glucoseController = TextEditingController();
+  
   double _duration = 45;
   String _selectedActivity = "Yürüyüş";
-  
-  // Şeker girişi için kontrolcü tanımlandı
-  final TextEditingController _glucoseController = TextEditingController();
 
   final List<Map<String, dynamic>> _activities = [
     {"label": "Yürüyüş", "icon": Icons.directions_walk},
@@ -29,24 +29,46 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
     {"label": "Bisiklet", "icon": Icons.directions_bike},
   ];
 
-  // Şeker alanı boşsa gösterilecek uyarı pop-up'ı
+  // Firestore'a kayıt işlemini gerçekleştiren fonksiyon
+  Future<void> _processSave() async {
+    final newExercise = ExerciseModel(
+      activityName: _selectedActivity,
+      durationMinutes: _duration.toInt(),
+      glucoseBefore: double.tryParse(_glucoseController.text.trim()),
+      date: DateTime.now(),
+      isCompleted: false, id: '', // Yeni eklenen egzersiz henüz tamamlanmamıştır
+    );
+
+    await _exerciseService.saveExercise(newExercise);
+    
+    if (mounted) {
+      Navigator.pop(context); // İşlem bitince geri dön
+    }
+  }
+
+  // Uyarı pop-up'ı ve kontrol mekanizması
   void _handleSave() async {
     if (_glucoseController.text.trim().isEmpty) {
       final bool? proceed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text("Şeker Verisi Eksik"),
+          backgroundColor: AppColors.surfaceLight,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Şeker Verisi Eksik", style: TextStyle(fontWeight: FontWeight.bold)),
           content: const Text(
-            "Şeker girme alanını doldurmazsanız egzersiz öncesi şeker verinizi kaydedemezsiniz. Devam etmek istiyor musunuz?"
+            "Egzersiz öncesi şeker verinizi girmeniz, diyabet takibiniz için önemlidir. Devam etmek istiyor musunuz?"
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false), // Geri dön
+              onPressed: () => Navigator.pop(context, false),
               child: const Text("Geri Dön", style: TextStyle(color: Colors.grey)),
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true), // Devam et
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => Navigator.pop(context, true),
               child: const Text(
                 "Devam Et", 
                 style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)
@@ -56,29 +78,27 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
         ),
       );
 
-      // Eğer kullanıcı pop-up'ta "Devam Et" dediyse ekrandan çık
-      if (proceed == true && mounted) {
-        Navigator.pop(context);
+      if (proceed == true) {
+        await _processSave();
       }
     } else {
-      // Şeker girilmişse direkt kaydet ve çık
-      Navigator.pop(context);
+      await _processSave();
     }
   }
 
   @override
   void dispose() {
-    _glucoseController.dispose(); // Bellek sızıntısını önlemek için
+    _glucoseController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Sadece kalori ve yoğunluk gösterimi için geçici model
     final calcModel = ExerciseModel(
-      id: '',
       activityName: _selectedActivity,
       durationMinutes: _duration.toInt(),
-      date: DateTime.now(),
+      date: DateTime.now(), id: '',
     );
 
     return Scaffold(
@@ -104,11 +124,14 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: _activities.map((act) => ActivityTypeCard(
-                  icon: act['icon'],
-                  label: act['label'],
-                  isSelected: _selectedActivity == act['label'],
-                  onTap: () => setState(() => _selectedActivity = act['label']),
+                children: _activities.map((act) => Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: ActivityTypeCard(
+                    icon: act['icon'],
+                    label: act['label'],
+                    isSelected: _selectedActivity == act['label'],
+                    onTap: () => setState(() => _selectedActivity = act['label']),
+                  ),
                 )).toList(),
               ),
             ),
@@ -122,7 +145,6 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
 
             const SizedBox(height: 32),
 
-            // Şeker giriş grubu kontrolcü ile bağlandı
             GlucoseInputGroup(controller: _glucoseController),
 
             const SizedBox(height: 32),
@@ -134,20 +156,24 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
 
             const SizedBox(height: 40),
 
-            // Kaydet Butonu
             ElevatedButton(
-              onPressed: _handleSave, // Kontrollü kayıt fonksiyonuna bağlandı
+              onPressed: _handleSave,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 minimumSize: const Size(double.infinity, 60),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                elevation: 4,
+                shadowColor: AppColors.secondary.withOpacity(0.3),
               ),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.check_circle, color: Colors.white),
                   SizedBox(width: 12),
-                  Text("Egzersizi Kaydet", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text(
+                    "Egzersizi Kaydet", 
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)
+                  ),
                 ],
               ),
             ),

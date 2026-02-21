@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../core/theme/app_colors.dart';
+import '../../data/models/exercise_model.dart';
+import '../../data/services/exercise_service.dart';
 import '../widgets/active_timer/timer_display.dart'; 
 import '../widgets/active_timer/post_exercise_sugar_input.dart'; 
 import '../widgets/active_timer/status_action_button.dart';
@@ -9,11 +11,15 @@ import '../widgets/active_timer/status_action_button.dart';
 class ActiveTimerScreen extends StatefulWidget {
   final String title;
   final int targetMinutes;
+  final double? initialSugar;
+  final String? exerciseId; 
 
   const ActiveTimerScreen({
     super.key, 
     required this.title, 
-    this.targetMinutes = 30,
+    required this.targetMinutes, 
+    this.initialSugar,
+    this.exerciseId,
   });
 
   @override
@@ -21,6 +27,7 @@ class ActiveTimerScreen extends StatefulWidget {
 }
 
 class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
+  final ExerciseService _exerciseService = ExerciseService();
   late int _seconds;
   int _prepSeconds = 3;
   bool _isPreparing = true;
@@ -39,107 +46,89 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
       if (!mounted) return;
       setState(() {
         if (_isPreparing) {
-          if (_prepSeconds > 0) {
-            _prepSeconds--;
-          } else {
-            _isPreparing = false;
-          }
+          if (_prepSeconds > 0) _prepSeconds--;
+          else _isPreparing = false;
         } else {
-          if (_seconds > 0) {
-            _seconds--;
-          } else {
-            _timer?.cancel();
-          }
+          if (_seconds > 0) _seconds--;
+          else _timer?.cancel();
         }
       });
     });
   }
 
-  // --- POP-UP MANTIĞI ---
+  Future<void> _saveAndExit() async {
+    final double? postSugar = double.tryParse(_sugarController.text);
+    
+    ExerciseModel model = ExerciseModel(
+     id: widget.exerciseId ?? '',
+      activityName: widget.title,
+      durationMinutes: widget.targetMinutes,
+      date: DateTime.now(),
+      glucoseBefore: widget.initialSugar,
+      glucoseAfter: postSugar,
+      isCompleted: true,
+    );
+
+    if (widget.exerciseId != null) {
+      await _exerciseService.updateExercise(model);
+    } else {
+      await _exerciseService.saveExercise(model);
+    }
+
+    if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+  }
 
   void _handleFinish() async {
     bool sugarEmpty = _sugarController.text.isEmpty;
     bool timeNotFinished = (_seconds > 0 && !_isPreparing);
 
-    // DURUM 1: HEM SÜRE DOLMADI HEM ŞEKER BOŞ
+    if (!sugarEmpty && !timeNotFinished) {
+      await _saveAndExit();
+      return;
+    }
+
+    String content = "";
     if (sugarEmpty && timeNotFinished) {
-      bool confirm = await _showCombinedWarning();
-      if (confirm && mounted) Navigator.of(context).pop();
-      return;
+      content = "Egzersiz süreniz henüz dolmadı ve şeker seviyenizi girmediniz. Bu şekilde bitirmek istiyor musunuz?";
+    } else if (timeNotFinished) {
+      content = "Egzersiz süreniz henüz dolmadı. Bitirmek istediğinize emin misiniz?";
+    } else if (sugarEmpty) {
+      content = "Şeker seviyenizi girmediniz. İstatistiklerinizin doğru hesaplanması için girmeniz önerilir. Devam edilsin mi?";
     }
 
-    // DURUM 2: SADECE SÜRE DOLMADI
-    if (timeNotFinished) {
-      bool confirm = await _showExitConfirmation();
-      if (confirm && mounted) Navigator.of(context).pop();
-      return;
-    }
-
-    // DURUM 3: SADECE ŞEKER BOŞ
-    if (sugarEmpty) {
-      bool confirm = await _showSugarConfirmation();
-      if (confirm && mounted) Navigator.of(context).pop();
-      return;
-    }
-
-    // DURUM 4: HER ŞEY TAMAM
-    Navigator.of(context).pop();
-  }
-
-  // Ortak Uyarı Penceresi (Süre + Şeker)
-  Future<bool> _showCombinedWarning() async {
-    return await showDialog<bool>(
+    bool? confirm = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        backgroundColor: AppColors.surfaceLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange),
-            SizedBox(width: 10),
-            Text("Dikkat!"),
+            Icon(Icons.warning_amber_rounded, color: AppColors.primary),
+            const SizedBox(width: 10),
+            const Text("Dikkat!", style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
           ],
         ),
-        content: const Text(
-          "Egzersiz süreniz henüz dolmadı ve şeker seviyenizi girmediniz. Bu şekilde bitirirseniz verileriniz kaydedilmeyecektir. Yine de devam etmek istiyor musunuz?"
-        ),
+        content: Text(content, style: const TextStyle(color: AppColors.textSecLight)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("GERİ DÖN")),
           TextButton(
-            onPressed: () => Navigator.pop(context, true), 
-            child: const Text("BİTİR", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("GERİ DÖN", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("YİNE DE BİTİR", style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
-    ) ?? false;
-  }
+    );
 
-  Future<bool> _showExitConfirmation() async {
-    return await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Süre Dolmadı"),
-        content: const Text("Egzersiz süreniz bitmeden çıkmak istediğinize emin misiniz?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("HAYIR")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("EVET, ÇIK")),
-        ],
-      ),
-    ) ?? false;
-  }
-
-  Future<bool> _showSugarConfirmation() async {
-    return await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Şeker Verisi Eksik"),
-        content: const Text("Şeker seviyenizi girmediniz. Devam etmek istiyor musunuz?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("GERİ DÖN")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("DEVAM ET")),
-        ],
-      ),
-    ) ?? false;
+    if (confirm == true) {
+      await _saveAndExit();
+    }
   }
 
   @override
@@ -147,21 +136,21 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
     double progressValue = _isPreparing ? 1.0 : (_seconds / (widget.targetMinutes * 60));
 
     return PopScope(
-      canPop: false, 
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop) return;
-        _handleFinish(); // Geri tuşu da artık aynı akıllı kontrolü yapıyor
+      canPop: false,
+      onPopInvokedWithResult: (didPop, r) { 
+        if(didPop) return;
+        _handleFinish(); 
       },
       child: Scaffold(
         backgroundColor: AppColors.backgroundLight,
         appBar: AppBar(
+          title: Text(widget.title, style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
+          centerTitle: true,
           backgroundColor: Colors.transparent,
           elevation: 0,
-          centerTitle: true,
-          title: Text(widget.title, style: const TextStyle(color: Color(0xFF148377), fontWeight: FontWeight.bold)),
           leading: IconButton(
-            icon: const Icon(Icons.close, color: AppColors.secondary),
-            onPressed: _handleFinish,
+            icon: const Icon(Icons.close, color: AppColors.secondary), 
+            onPressed: _handleFinish
           ),
         ),
         body: Column(
@@ -176,8 +165,8 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
                     const SizedBox(height: 40),
                     TimerDisplay(
                       formattedTime: _isPreparing 
-                        ? (_prepSeconds > 0 ? "$_prepSeconds" : "BAŞLA!") 
-                        : _formatTime(_seconds),
+                          ? (_prepSeconds > 0 ? "$_prepSeconds" : "BAŞLA!") 
+                          : _formatTime(_seconds),
                       seconds: _isPreparing ? _prepSeconds : _seconds,
                       progress: progressValue,
                     ),
@@ -188,24 +177,10 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(30, 0, 30, 100), 
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    height: 60,
-                    width: double.infinity,
-                    child: StatusActionButton(
-                      label: _seconds == 0 ? "Tamamladım" : "Egzersizi Bitir",
-                      onPressed: _handleFinish, 
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _isPreparing ? "HAZIRLAN..." : "● OTURUM DEVAM EDİYOR", 
-                    style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(30, 0, 30, 80),
+              child: StatusActionButton(
+                label: _seconds == 0 ? "Tamamladım" : "Egzersizi Bitir",
+                onPressed: _handleFinish,
               ),
             ),
           ],
@@ -214,31 +189,29 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
     );
   }
 
-  String _formatTime(int totalSeconds) {
-    int minutes = totalSeconds ~/ 60;
-    int seconds = totalSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-
   Widget _buildSafetyBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(color: const Color(0xFFE0F2F1), borderRadius: BorderRadius.circular(20)),
-      child: const Row(
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.security, color: Color(0xFF148377), size: 14),
-          SizedBox(width: 8),
-          Text("Önce Güvenlik: Başınız dönerse durun.", style: TextStyle(color: Color(0xFF148377), fontSize: 10, fontWeight: FontWeight.bold)),
+          Icon(Icons.security, color: AppColors.secondary.withOpacity(0.7), size: 14),
+          const SizedBox(width: 8),
+          Text(
+            "Önce Güvenlik: Başınız dönerse durun.",
+            style: TextStyle(color: AppColors.secondary.withOpacity(0.7), fontSize: 10, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
   }
 
+  String _formatTime(int s) => '${(s~/60).toString().padLeft(2,'0')}:${(s%60).toString().padLeft(2,'0')}';
+
   @override
-  void dispose() {
-    _timer?.cancel();
-    _sugarController.dispose();
-    super.dispose();
-  }
+  void dispose() { _timer?.cancel(); _sugarController.dispose(); super.dispose(); }
 }

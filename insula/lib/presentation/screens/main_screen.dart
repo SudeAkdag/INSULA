@@ -24,7 +24,7 @@ class _MainScreenState extends State<MainScreen> {
     const MedicationScreen(),                       // İndeks 0 (İlaç)
     const HomeScreen(),                             // İndeks 1 (Ana Sayfa)
     const NutritionScreen(),                        // İndeks 2 (Beslenme)
-    const ExerciseScreen(),                         // İndeks 3 (Egzersiz)
+     ExerciseScreen(),                         // İndeks 3 (Egzersiz)
   ];
 
   void _onItemTapped(int index) {

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -24,26 +23,39 @@ class ActivityTypeCard extends StatelessWidget {
         padding: const EdgeInsets.only(right: 16.0),
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
+            // İkon Konteynırı
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(16), // Biraz daha genişletildi
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF0D4D44) : AppColors.surfaceLight,
-                borderRadius: BorderRadius.circular(12),
-                border: isSelected ? null : Border.all(color: Colors.grey.shade200),
+                color: isSelected ? AppColors.secondary : AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(20), // Daha yumuşak köşeler
+                border: isSelected 
+                    ? Border.all(color: AppColors.secondary, width: 2)
+                    : Border.all(color: AppColors.backgroundLight),
+                boxShadow: isSelected ? [
+                  BoxShadow(
+                    color: AppColors.secondary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  )
+                ] : null,
               ),
               child: Icon(
                 icon,
-                color: isSelected ? Colors.white : Colors.grey.shade600,
-                size: 28,
+                color: isSelected ? Colors.white : Colors.grey.shade500,
+                size: 26,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
+            // Aktivite Metni
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? const Color(0xFF0D4D44) : Colors.grey.shade600,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppColors.secondary : Colors.grey.shade600,
+                letterSpacing: 0.5,
               ),
             ),
           ],

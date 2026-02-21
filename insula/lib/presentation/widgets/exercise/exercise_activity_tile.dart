@@ -9,8 +9,21 @@ class ExerciseActivityTile extends StatelessWidget {
   final String calories;
   final IconData icon;
   final bool isCompleted;
+  final int duration; // Süre eklendi
+  final String? exerciseId; // Güncelleme için ID eklendi
+  final double? initialSugar; // Başlangıç şekeri eklendi
 
-  const ExerciseActivityTile({super.key, required this.title, required this.subtitle, required this.calories, required this.icon, required this.isCompleted});
+  const ExerciseActivityTile({
+    super.key, 
+    required this.title, 
+    required this.subtitle, 
+    required this.calories, 
+    required this.icon, 
+    required this.isCompleted,
+    required this.duration, // Zorunlu yaptık
+    this.exerciseId,
+    this.initialSugar,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +37,10 @@ class ExerciseActivityTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(backgroundColor: AppColors.backgroundLight, child: Icon(icon, color: AppColors.secondary)),
+          CircleAvatar(
+            backgroundColor: AppColors.backgroundLight, 
+            child: Icon(icon, color: AppColors.secondary)
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -39,11 +55,21 @@ class ExerciseActivityTile extends StatelessWidget {
           isCompleted 
             ? const Icon(Icons.check_circle, color: Colors.green, size: 28)
             : SizedBox(
-                width: 80, // Liste içindeki buton genişliği
+                width: 80,
                 height: 40,
                 child: StatusActionButton(
                   label: "BAŞLA",
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ActiveTimerScreen(title: title))),
+                  onPressed: () => Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => ActiveTimerScreen(
+                        title: title, 
+                        targetMinutes: duration, // Hata veren yer düzeldi
+                        exerciseId: exerciseId, // Güncelleme için ID gidiyor
+                        initialSugar: initialSugar, // Şeker verisi gidiyor
+                      ),
+                    ),
+                  ),
                 ),
               ),
         ],
