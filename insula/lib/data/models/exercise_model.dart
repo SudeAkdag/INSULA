@@ -52,4 +52,34 @@ class ExerciseModel {
     if (calories < 300) return "ORTA YOĞUNLUK";
     return "YÜKSEK YOĞUNLUK";
   }
+
+
+  Map<String, dynamic> toMap() {
+    return {
+      'activityName': activityName,
+      'durationMinutes': durationMinutes,
+      'glucoseBefore': glucoseBefore,
+      'glucoseAfter': glucoseAfter,
+      'date': date.toIso8601String(),
+      'isCompleted': isCompleted,
+      'startTime': startTime?.toIso8601String(),
+      'estimatedCalories': estimatedCalories,
+      'intensityLevel': intensityLevel,
+    };
+  }
+
+  factory ExerciseModel.fromMap(String id, Map<String, dynamic> map) {
+    return ExerciseModel(
+      id: id,
+      activityName: map['activityName'] ?? '',
+      // num kullanımı int ve double karmaşasını önler
+      durationMinutes: (map['durationMinutes'] as num?)?.toInt() ?? 0,
+      glucoseBefore: (map['glucoseBefore'] as num?)?.toDouble(),
+      glucoseAfter: (map['glucoseAfter'] as num?)?.toDouble(),
+      // Tarih verisi string olarak saklandığı için parse edilir
+      date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
+      isCompleted: map['isCompleted'] ?? false,
+      startTime: map['startTime'] != null ? DateTime.parse(map['startTime']) : null,
+    );
+  }
 }
