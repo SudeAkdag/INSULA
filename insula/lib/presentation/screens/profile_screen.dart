@@ -38,10 +38,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _chronicCtrl = TextEditingController();
   final _allergyCtrl = TextEditingController();
 
-  // Acil durum kişileri için dinamik liste
   List<EmergencyContact> _emergencyContacts = [];
 
   static const double _cardRadius = 16;
+
+  // ✅ Daha kompakt aralıklar
+  static const double _gapXs = 8;
+  static const double _gapSm = 12;
+  static const double _gapMd = 14;
+  static const double _sectionTop = 14;
+  static const double _sectionBottom = 6;
+  static const double _cardPadding = 14;
+  static const double _cardMarginBottom = 10;
 
   bool _isLoading = true;
   String? _errorText;
@@ -52,7 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProfile(); // ✅ açılışta otomatik doldur
+    _loadProfile();
   }
 
   @override
@@ -86,7 +94,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (picked != null) setState(() => _dob = picked);
   }
 
-  // ✅ Firestore'dan çekip alanları doldurur
   Future<void> _loadProfile() async {
     setState(() {
       _isLoading = true;
@@ -103,7 +110,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      // Auth email’i en azından burada dursun
       _emailCtrl.text = user.email ?? '';
 
       final doc = await _firestore.collection('users').doc(user.uid).get();
@@ -129,10 +135,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _chronicCtrl.text = (data['chronicDiseases'] ?? '').toString();
       _allergyCtrl.text = (data['allergies'] ?? '').toString();
 
-      // emergencyContacts: [{name:"", phone:""}]
       final ec = data['emergencyContacts'];
       if (ec is List) {
-        // önce eskileri temizle
         for (final c in _emergencyContacts) {
           c.nameController.dispose();
           c.phoneController.dispose();
@@ -142,8 +146,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         for (final item in ec) {
           if (item is Map) {
             _emergencyContacts.add(EmergencyContact(
-              nameController: TextEditingController(text: (item['name'] ?? '').toString()),
-              phoneController: TextEditingController(text: (item['phone'] ?? '').toString()),
+              nameController:
+                  TextEditingController(text: (item['name'] ?? '').toString()),
+              phoneController:
+                  TextEditingController(text: (item['phone'] ?? '').toString()),
             ));
           }
         }
@@ -175,7 +181,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  // ✅ Firestore’a kaydeder/günceller
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -194,8 +199,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      final height = double.tryParse(_heightCtrl.text.trim().replaceAll(',', '.'));
-      final weight = double.tryParse(_weightCtrl.text.trim().replaceAll(',', '.'));
+      final height =
+          double.tryParse(_heightCtrl.text.trim().replaceAll(',', '.'));
+      final weight =
+          double.tryParse(_weightCtrl.text.trim().replaceAll(',', '.'));
 
       if ((_heightCtrl.text.trim().isNotEmpty && height == null) ||
           (_weightCtrl.text.trim().isNotEmpty && weight == null)) {
@@ -280,7 +287,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Form(
             key: _formKey,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              padding: const EdgeInsets.fromLTRB(18, 10, 18, 22), // ✅ daha kompakt
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -290,11 +297,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: const EdgeInsets.only(bottom: 10),
                       decoration: BoxDecoration(
                         color: AppColors.tertiary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.tertiary.withValues(alpha: 0.35)),
+                        border: Border.all(
+                          color: AppColors.tertiary.withValues(alpha: 0.35),
+                        ),
                       ),
                       child: Text(
                         _errorText!,
@@ -309,15 +318,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Column(
                       children: [
                         _field('Ad Soyad', _nameCtrl, suffixIcon: Icons.person),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: _gapSm),
                         _field(
                           'E-posta',
                           _emailCtrl,
                           keyboard: TextInputType.emailAddress,
                           suffixIcon: Icons.email,
-                          readOnly: true, // ✅ email sabit kalsın
+                          readOnly: true,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: _gapSm),
                         Row(
                           children: [
                             Expanded(child: _genderField()),
@@ -366,8 +375,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     accent: AppColors.primary,
                     child: Column(
                       children: [
-                        _field('Kronik Hastalıklar', _chronicCtrl, hintText: 'Örn: Tip 2 Diyabet'),
-                        const SizedBox(height: 16),
+                        _field('Kronik Hastalıklar', _chronicCtrl,
+                            hintText: 'Örn: Tip 2 Diyabet'),
+                        const SizedBox(height: _gapSm),
                         _field('Alerjiler', _allergyCtrl, hintText: 'Örn: Penisilin'),
                       ],
                     ),
@@ -382,7 +392,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           final contact = _emergencyContacts[index];
                           return Column(
                             children: [
-                              if (index > 0) const SizedBox(height: 16),
+                              if (index > 0) const SizedBox(height: _gapSm),
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -418,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ],
                           );
                         }),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: _gapSm),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
@@ -442,7 +452,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-
           if (_isLoading)
             Container(
               color: Colors.black.withValues(alpha: 0.05),
@@ -462,40 +471,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Stack(
             children: [
               CircleAvatar(
-                radius: 56,
+                radius: 52, // ✅ 56 → 52 daha kompakt
                 backgroundColor: AppColors.surfaceLight,
-                child: Icon(Icons.person, size: 56, color: AppColors.secondary),
+                child: Icon(Icons.person, size: 52, color: AppColors.secondary),
               ),
               Positioned(
                 right: 0,
                 bottom: 0,
                 child: CircleAvatar(
-                  radius: 18,
+                  radius: 16, // ✅ 18 → 16
                   backgroundColor: AppColors.primary,
-                  child: const Icon(Icons.camera_alt, size: 18, color: AppColors.secondary),
+                  child: const Icon(Icons.camera_alt, size: 16, color: AppColors.secondary),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: _gapSm),
         Text(
           headerName,
-          style: AppTextStyles.h1.copyWith(fontSize: 20),
+          style: AppTextStyles.h1.copyWith(fontSize: 19),
         ),
         const SizedBox(height: 4),
         Text(
           headerMail,
           style: AppTextStyles.body.copyWith(color: AppColors.textSecLight),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: _gapMd), // ✅ 28 → 14
       ],
     );
   }
 
   Widget _section(String title, {bool danger = false}) {
     return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 10),
+      padding: const EdgeInsets.only(top: _sectionTop, bottom: _sectionBottom),
       child: Text(
         title.toUpperCase(),
         style: AppTextStyles.body.copyWith(
@@ -544,7 +553,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.accentTeal, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12), // ✅ 14 → 12
             suffixIcon: suffixIcon != null
                 ? Icon(suffixIcon, color: AppColors.accentTeal, size: 22)
                 : null,
@@ -562,7 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6), // ✅ 8 → 6
       child: Text(
         text,
         style: AppTextStyles.body.copyWith(
@@ -599,7 +608,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.all(Radius.circular(12)),
               borderSide: BorderSide(color: AppColors.accentTeal, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12), // ✅
             suffixIcon: Icon(Icons.arrow_drop_down, color: AppColors.accentTeal, size: 22),
           ),
           items: const [
@@ -640,7 +649,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.all(Radius.circular(12)),
                 borderSide: BorderSide(color: AppColors.accentTeal, width: 1.5),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12), // ✅
               suffixIcon: Icon(Icons.calendar_today, color: AppColors.accentTeal, size: 22),
             ),
             child: Text(
@@ -658,8 +667,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _accentCard({required Color accent, required Widget child}) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(_cardPadding), // ✅ 16 → 14
+      margin: const EdgeInsets.only(bottom: _cardMarginBottom), // ✅ 12 → 10
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(_cardRadius),
