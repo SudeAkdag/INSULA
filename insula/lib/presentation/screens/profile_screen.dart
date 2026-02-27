@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
@@ -40,10 +43,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   static const double _cardRadius = 16;
 
+  bool _isLoading = true;
+  String? _errorText;
+
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
-    _dob = DateTime.now(); // Bugünün tarihi varsayılan olarak seçili
+    _loadProfile(); // ✅ açılışta otomatik doldur
   }
 
   @override
@@ -77,6 +86,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (picked != null) setState(() => _dob = picked);
   }
 
+  // ✅ Firestore'dan çekip alanları doldurur
+  Future<void> _loadProfile() async {
+    setState(() {
+      _isLoading = true;
+      _errorText = null;
+    });
+
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        setState(() {
+          _errorText = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Auth email’i en azından burada dursun
+      _emailCtrl.text = user.email ?? '';
+
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (!doc.exists || doc.data() == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final data = doc.data()!;
+
+      _nameCtrl.text = (data['fullName'] ?? '').toString();
+      _emailCtrl.text = (data['email'] ?? _emailCtrl.text).toString();
+      _gender = (data['gender'] as String?) ?? _gender;
+
+      final bd = data['birthDate'];
+      if (bd is Timestamp) _dob = bd.toDate();
+
+      final h = data['height'];
+      final w = data['weight'];
+      if (h != null) _heightCtrl.text = (h as num).toString();
+      if (w != null) _weightCtrl.text = (w as num).toString();
+
+      _chronicCtrl.text = (data['chronicDiseases'] ?? '').toString();
+      _allergyCtrl.text = (data['allergies'] ?? '').toString();
+
+      // emergencyContacts: [{name:"", phone:""}]
+      final ec = data['emergencyContacts'];
+      if (ec is List) {
+        // önce eskileri temizle
+        for (final c in _emergencyContacts) {
+          c.nameController.dispose();
+          c.phoneController.dispose();
+        }
+        _emergencyContacts = [];
+
+        for (final item in ec) {
+          if (item is Map) {
+            _emergencyContacts.add(EmergencyContact(
+              nameController: TextEditingController(text: (item['name'] ?? '').toString()),
+              phoneController: TextEditingController(text: (item['phone'] ?? '').toString()),
+            ));
+          }
+        }
+      }
+
+      setState(() => _isLoading = false);
+    } catch (e) {
+      setState(() {
+        _errorText = 'Profil yüklenirken hata oluştu: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
   void _addEmergencyContact() {
     setState(() {
       _emergencyContacts.add(EmergencyContact(
@@ -94,16 +175,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
-  void _save() {
-    if (_formKey.currentState?.validate() ?? false) {
+  // ✅ Firestore’a kaydeder/günceller
+  Future<void> _save() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorText = null;
+    });
+
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        setState(() {
+          _errorText = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final height = double.tryParse(_heightCtrl.text.trim().replaceAll(',', '.'));
+      final weight = double.tryParse(_weightCtrl.text.trim().replaceAll(',', '.'));
+
+      if ((_heightCtrl.text.trim().isNotEmpty && height == null) ||
+          (_weightCtrl.text.trim().isNotEmpty && weight == null)) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Boy/Kilo sayı olmalı. Örn: 175 / 70.5')),
+        );
+        return;
+      }
+
+      final ecList = _emergencyContacts.map((c) {
+        return {
+          'name': c.nameController.text.trim(),
+          'phone': c.phoneController.text.trim(),
+        };
+      }).toList();
+
+      await _firestore.collection('users').doc(user.uid).set({
+        'fullName': _nameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim(),
+        'gender': _gender,
+        'birthDate': _dob == null ? null : Timestamp.fromDate(_dob!),
+        'height': height,
+        'weight': weight,
+        'chronicDiseases': _chronicCtrl.text.trim(),
+        'allergies': _allergyCtrl.text.trim(),
+        'emergencyContacts': ecList,
+        'profileComplete': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profil kaydedildi')),
+        const SnackBar(content: Text('Profil kaydedildi ✅')),
       );
+    } catch (e) {
+      setState(() {
+        _errorText = 'Kaydederken hata oluştu: $e';
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final headerName =
+        _nameCtrl.text.trim().isEmpty ? 'Ad Soyad' : _nameCtrl.text.trim();
+    final headerMail =
+        _emailCtrl.text.trim().isEmpty ? 'E-posta' : _emailCtrl.text.trim();
+
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       appBar: AppBar(
@@ -120,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: _save,
+            onPressed: _isLoading ? null : _save,
             child: Text(
               'KAYDET',
               style: AppTextStyles.body.copyWith(
@@ -131,139 +275,187 @@ class _ProfileScreenState extends State<ProfileScreen> {
           )
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _profileHeader(),
+      body: Stack(
+        children: [
+          Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _profileHeader(headerName, headerMail),
 
-              _section('Kişisel Bilgiler'),
-              _accentCard(
-                accent: AppColors.accentTeal,
-                child: Column(
-                  children: [
-                    _field('Ad Soyad', _nameCtrl, suffixIcon: Icons.person),
-                    const SizedBox(height: 16),
-                    _field(
-                      'E-posta',
-                      _emailCtrl,
-                      keyboard: TextInputType.emailAddress,
-                      suffixIcon: Icons.email,
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: _genderField()),
-                        const SizedBox(width: 12),
-                        Expanded(child: _dobField()),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              _section('Fiziksel Ölçümler'),
-              _accentCard(
-                accent: AppColors.primary,
-                child: Row(
-                  children: [
-                    Expanded(child: _field('Boy (cm)', _heightCtrl, hintText: 'Örn: 182')),
-                    const SizedBox(width: 12),
-                    Expanded(child: _field('Kilo (kg)', _weightCtrl, hintText: 'Örn: 78')),
-                  ],
-                ),
-              ),
-
-              _section('Sağlık Bilgileri'),
-              _accentCard(
-                accent: AppColors.primary,
-                child: Column(
-                  children: [
-                    _field('Kronik Hastalıklar', _chronicCtrl, hintText: 'Örn: Tip 2 Diyabet'),
-                    const SizedBox(height: 16),
-                    _field('Alerjiler', _allergyCtrl, hintText: 'Örn: Penisilin'),
-                  ],
-                ),
-              ),
-
-              _section('Acil Durum Bilgisi', danger: true),
-              _accentCard(
-                accent: AppColors.tertiary,
-                child: Column(
-                  children: [
-                    ...List.generate(_emergencyContacts.length, (index) {
-                      final contact = _emergencyContacts[index];
-                      return Column(
-                        children: [
-                          if (index > 0) const SizedBox(height: 16),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: _field(
-                                  'Ad Soyad',
-                                  contact.nameController,
-                                  hintText: 'Örn: Ayşe Yılmaz',
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _field(
-                                  'Telefon',
-                                  contact.phoneController,
-                                  keyboard: TextInputType.phone,
-                                  hintText: 'Örn: +90 555 123 45 67',
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  color: AppColors.tertiary,
-                                  size: 24,
-                                ),
-                                onPressed: () => _removeEmergencyContact(index),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    }),
-                    const SizedBox(height: 16),
-                    SizedBox(
+                  if (_errorText != null) ...[
+                    Container(
                       width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: _addEmergencyContact,
-                        icon: const Icon(Icons.add, size: 20),
-                        label: const Text('Kişi Ekle'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.tertiary,
-                          side: BorderSide(color: AppColors.tertiary),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.tertiary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.tertiary.withValues(alpha: 0.35)),
+                      ),
+                      child: Text(
+                        _errorText!,
+                        style: AppTextStyles.body.copyWith(color: AppColors.tertiary),
                       ),
                     ),
                   ],
-                ),
+
+                  _section('Kişisel Bilgiler'),
+                  _accentCard(
+                    accent: AppColors.accentTeal,
+                    child: Column(
+                      children: [
+                        _field('Ad Soyad', _nameCtrl, suffixIcon: Icons.person),
+                        const SizedBox(height: 16),
+                        _field(
+                          'E-posta',
+                          _emailCtrl,
+                          keyboard: TextInputType.emailAddress,
+                          suffixIcon: Icons.email,
+                          readOnly: true, // ✅ email sabit kalsın
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(child: _genderField()),
+                            const SizedBox(width: 12),
+                            Expanded(child: _dobField()),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  _section('Fiziksel Ölçümler'),
+                  _accentCard(
+                    accent: AppColors.primary,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _field(
+                            'Boy (cm)',
+                            _heightCtrl,
+                            hintText: 'Örn: 182',
+                            keyboard: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _field(
+                            'Kilo (kg)',
+                            _weightCtrl,
+                            hintText: 'Örn: 78',
+                            keyboard: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  _section('Sağlık Bilgileri'),
+                  _accentCard(
+                    accent: AppColors.primary,
+                    child: Column(
+                      children: [
+                        _field('Kronik Hastalıklar', _chronicCtrl, hintText: 'Örn: Tip 2 Diyabet'),
+                        const SizedBox(height: 16),
+                        _field('Alerjiler', _allergyCtrl, hintText: 'Örn: Penisilin'),
+                      ],
+                    ),
+                  ),
+
+                  _section('Acil Durum Bilgisi', danger: true),
+                  _accentCard(
+                    accent: AppColors.tertiary,
+                    child: Column(
+                      children: [
+                        ...List.generate(_emergencyContacts.length, (index) {
+                          final contact = _emergencyContacts[index];
+                          return Column(
+                            children: [
+                              if (index > 0) const SizedBox(height: 16),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: _field(
+                                      'Ad Soyad',
+                                      contact.nameController,
+                                      hintText: 'Örn: Ayşe Yılmaz',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _field(
+                                      'Telefon',
+                                      contact.phoneController,
+                                      keyboard: TextInputType.phone,
+                                      hintText: 'Örn: +90 555 123 45 67',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.delete_outline,
+                                      color: AppColors.tertiary,
+                                      size: 24,
+                                    ),
+                                    onPressed: () => _removeEmergencyContact(index),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _isLoading ? null : _addEmergencyContact,
+                            icon: const Icon(Icons.add, size: 20),
+                            label: const Text('Kişi Ekle'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.tertiary,
+                              side: BorderSide(color: AppColors.tertiary),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+
+          if (_isLoading)
+            Container(
+              color: Colors.black.withValues(alpha: 0.05),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+        ],
       ),
     );
   }
 
   // ================= UI =================
 
-  Widget _profileHeader() {
+  Widget _profileHeader(String headerName, String headerMail) {
     return Column(
       children: [
         Center(
@@ -272,8 +464,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               CircleAvatar(
                 radius: 56,
                 backgroundColor: AppColors.surfaceLight,
-                child: Icon(Icons.person,
-                    size: 56, color: AppColors.secondary),
+                child: Icon(Icons.person, size: 56, color: AppColors.secondary),
               ),
               Positioned(
                 right: 0,
@@ -281,8 +472,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: CircleAvatar(
                   radius: 18,
                   backgroundColor: AppColors.primary,
-                  child: const Icon(Icons.camera_alt,
-                      size: 18, color: AppColors.secondary),
+                  child: const Icon(Icons.camera_alt, size: 18, color: AppColors.secondary),
                 ),
               ),
             ],
@@ -290,12 +480,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          'Ad Soyad',
+          headerName,
           style: AppTextStyles.h1.copyWith(fontSize: 20),
         ),
         const SizedBox(height: 4),
         Text(
-          'E-posta',
+          headerMail,
           style: AppTextStyles.body.copyWith(color: AppColors.textSecLight),
         ),
         const SizedBox(height: 28),
@@ -324,6 +514,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     TextInputType keyboard = TextInputType.text,
     String? hintText,
     IconData? suffixIcon,
+    bool readOnly = false,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,6 +524,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         TextFormField(
           controller: c,
           keyboardType: keyboard,
+          inputFormatters: inputFormatters,
+          readOnly: readOnly,
           style: AppTextStyles.body,
           decoration: InputDecoration(
             hintText: hintText,
@@ -355,6 +549,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ? Icon(suffixIcon, color: AppColors.accentTeal, size: 22)
                 : null,
           ),
+          validator: (v) {
+            if (label == 'Ad Soyad' && (v == null || v.trim().isEmpty)) {
+              return 'Ad Soyad boş olamaz';
+            }
+            return null;
+          },
         ),
       ],
     );
@@ -405,10 +605,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           items: const [
             DropdownMenuItem(value: 'Erkek', child: Text('Erkek')),
             DropdownMenuItem(value: 'Kadın', child: Text('Kadın')),
-            DropdownMenuItem(
-              value: 'Belirtmek İstemiyorum',
-              child: Text('Belirtmek İstemiyorum'),
-            ),
+            DropdownMenuItem(value: 'Belirtmek İstemiyorum', child: Text('Belirtmek İstemiyorum')),
           ],
           onChanged: (v) => setState(() => _gender = v),
         ),
@@ -417,12 +614,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _dobField() {
+    final text = _dob == null ? '' : _formatDate(_dob);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildLabel('Doğum Tarihi'),
         InkWell(
-          onTap: _pickDob,
+          onTap: _isLoading ? null : _pickDob,
           child: InputDecorator(
             decoration: InputDecoration(
               hintText: 'Örn: 15/05/1990',
@@ -445,10 +644,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               suffixIcon: Icon(Icons.calendar_today, color: AppColors.accentTeal, size: 22),
             ),
             child: Text(
-              '', // Her zaman boş göster, hint text görünsün
+              text.isEmpty ? 'Tarih seçiniz' : text,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.body.copyWith(
-                color: Colors.grey,
+                color: text.isEmpty ? Colors.grey : AppColors.secondary,
               ),
             ),
           ),
@@ -476,5 +675,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: child,
     );
   }
-
 }

@@ -19,7 +19,6 @@ dependencies:
     sdk: flutter
   google_fonts: ^6.3.0
   google_generative_ai: ^0.4.7
-  dependencies:
   
 
 dev_dependencies:
