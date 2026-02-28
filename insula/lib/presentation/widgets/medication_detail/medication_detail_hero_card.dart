@@ -8,6 +8,8 @@ class MedicationDetailHeroCard extends StatelessWidget {
   final String medicationType;
   final String dosage;
   final String frequency;
+  final DateTime? startDate;
+  final DateTime? endDate;
 
   const MedicationDetailHeroCard({
     super.key,
@@ -15,6 +17,8 @@ class MedicationDetailHeroCard extends StatelessWidget {
     required this.medicationType,
     required this.dosage,
     required this.frequency,
+    this.startDate,
+    this.endDate,
   });
 
   @override
@@ -109,6 +113,27 @@ class MedicationDetailHeroCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (startDate != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: AppColors.accentTeal.withOpacity(0.7),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${startDate!.day.toString().padLeft(2, '0')}.${startDate!.month.toString().padLeft(2, '0')}.${startDate!.year}' +
+                        (endDate != null ? ' - ${endDate!.day.toString().padLeft(2, '0')}.${endDate!.month.toString().padLeft(2, '0')}.${endDate!.year}' : ' (Sürekli)'),
+                        style: AppTextStyles.label.copyWith(
+                          fontSize: 11,
+                          color: AppColors.textSecLight.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

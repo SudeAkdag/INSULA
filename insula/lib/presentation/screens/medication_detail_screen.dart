@@ -71,6 +71,8 @@ class MedicationDetailScreen extends StatelessWidget {
             medicationType: medicationType,
             dosage: dosage,
             frequency: frequency,
+            startDate: medication['startDate'] as DateTime?,
+            endDate: medication['endDate'] as DateTime?,
           ),
           _buildUsageScheduleSection(
             doseTimes: doseTimes,

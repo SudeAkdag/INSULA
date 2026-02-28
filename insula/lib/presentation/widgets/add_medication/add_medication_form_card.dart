@@ -9,9 +9,13 @@ class AddMedicationFormCard extends StatelessWidget {
   final String medicationType;
   final String dosage;
   final String frequency;
+  final DateTime? startDate;
+  final DateTime? endDate;
   final VoidCallback onTypeTap;
   final VoidCallback onDosageTap;
   final VoidCallback onFrequencyTap;
+  final VoidCallback onStartDateTap;
+  final VoidCallback onEndDateTap;
   final String? Function(String?)? nameValidator;
 
   const AddMedicationFormCard({
@@ -20,9 +24,13 @@ class AddMedicationFormCard extends StatelessWidget {
     required this.medicationType,
     required this.dosage,
     required this.frequency,
+    this.startDate,
+    this.endDate,
     required this.onTypeTap,
     required this.onDosageTap,
     required this.onFrequencyTap,
+    required this.onStartDateTap,
+    required this.onEndDateTap,
     this.nameValidator,
   });
 
@@ -81,6 +89,16 @@ class AddMedicationFormCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AddMedicationSelectField(
+                  label: 'Sıklık',
+                  value: frequency,
+                  hint: 'Günde 2 kez',
+                  suffixIcon: AddMedicationSelectField.dropdownIcon(),
+                  onTap: onFrequencyTap,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AddMedicationSelectField(
                   label: 'Dozaj',
                   value: dosage,
                   hint: '10 mg',
@@ -88,14 +106,28 @@ class AddMedicationFormCard extends StatelessWidget {
                   onTap: onDosageTap,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: AddMedicationSelectField(
+                  label: 'Başlangıç',
+                  value: startDate != null ? '${startDate!.day.toString().padLeft(2, '0')}.${startDate!.month.toString().padLeft(2, '0')}.${startDate!.year}' : '',
+                  hint: 'Tarih Seç',
+                  suffixIcon: const Icon(Icons.calendar_today, size: 20, color: AppColors.accentTeal),
+                  onTap: onStartDateTap,
+                ),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: AddMedicationSelectField(
-                  label: 'Sıklık',
-                  value: frequency,
-                  hint: 'Günde 2 kez',
-                  suffixIcon: AddMedicationSelectField.dropdownIcon(),
-                  onTap: onFrequencyTap,
+                  label: 'Bitiş',
+                  value: endDate != null ? '${endDate!.day.toString().padLeft(2, '0')}.${endDate!.month.toString().padLeft(2, '0')}.${endDate!.year}' : 'Belirsiz',
+                  hint: 'Tarih Seç',
+                  suffixIcon: const Icon(Icons.calendar_today, size: 20, color: AppColors.accentTeal),
+                  onTap: onEndDateTap,
                 ),
               ),
             ],

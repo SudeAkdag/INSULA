@@ -81,6 +81,25 @@ class _MedicationScreenState extends State<MedicationScreen> {
     
     for (int medIndex = 0; medIndex < _savedMedications.length; medIndex++) {
       final med = _savedMedications[medIndex];
+      
+      // Tarih filtrelemesi
+      final DateTime? startDate = med['startDate'] != null ? med['startDate'] as DateTime : null;
+      final DateTime? endDate = med['endDate'] != null ? med['endDate'] as DateTime : null;
+      final selectedDate = _selectedDate ?? DateTime.now();
+
+      // Sadece günü karşılaştır
+      final selectedDateOnly = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+      
+      if (startDate != null) {
+        final startDateOnly = DateTime(startDate.year, startDate.month, startDate.day);
+        if (selectedDateOnly.isBefore(startDateOnly)) continue;
+      }
+      
+      if (endDate != null) {
+        final endDateOnly = DateTime(endDate.year, endDate.month, endDate.day);
+        if (selectedDateOnly.isAfter(endDateOnly)) continue;
+      }
+
       final doseUsageTimes = med['doseUsageTimes'] as List<String>;
       final doseTimes = med['doseTimes'] as List<TimeOfDay>;
       final doseAmounts = med['doseAmounts'] as List<String>;
@@ -132,18 +151,6 @@ class _MedicationScreenState extends State<MedicationScreen> {
           ],
         ),
         centerTitle: true,
-        actions: [
-          TextButton(
-            onPressed: null, // UI-only
-            child: Text(
-              'Düzenle',
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.accentTeal,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

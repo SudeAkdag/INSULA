@@ -120,6 +120,14 @@ class MedicationService {
                 data['takenFlags'] = List<bool>.from(data['takenFlags'] as List);
               }
 
+              // Firestore Timestamp -> DateTime dönüşümleri
+              if (data['startDate'] != null && data['startDate'] is Timestamp) {
+                data['startDate'] = (data['startDate'] as Timestamp).toDate();
+              }
+              if (data['endDate'] != null && data['endDate'] is Timestamp) {
+                data['endDate'] = (data['endDate'] as Timestamp).toDate();
+              }
+
               return data;
             }).toList();
           });

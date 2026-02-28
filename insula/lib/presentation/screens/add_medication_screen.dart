@@ -31,6 +31,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   String _medicationType = 'Tür Seçiniz';
   String _dosage = '10 mg';
   String _frequency = 'Günde 1 kez';
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   late List<TimeOfDay> _doseTimes;
   late List<String> _doseAmounts;
@@ -44,6 +46,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       _loadMedicationData();
     } else {
       _initializeDoses();
+      _startDate = DateTime.now();
+      // Bitiş tarihi varsayılan olarak boş kalabilir (Sürekli ilaç)
     }
   }
 
@@ -54,6 +58,9 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     _dosage = med['dosage'] as String? ?? '10 mg';
     _frequency = med['frequency'] as String? ?? 'Günde 1 kez';
     _notesController.text = med['notes'] as String? ?? '';
+    
+    _startDate = med['startDate'] != null ? (med['startDate'] as DateTime) : null;
+    _endDate = med['endDate'] != null ? (med['endDate'] as DateTime) : null;
     
     final doseTimes = med['doseTimes'] as List<TimeOfDay>?;
     final doseAmounts = med['doseAmounts'] as List<String>?;
@@ -125,6 +132,16 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     if (picked != null) onPicked(picked);
   }
 
+  Future<void> _pickDate(DateTime? initial, void Function(DateTime) onPicked) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) onPicked(picked);
+  }
+
   void _save() {
     final name = _nameController.text.trim();
     
@@ -146,6 +163,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       'doseAmounts': _doseAmounts,
       'doseUsageTimes': _doseUsageTimes,
       'doseConditions': _doseConditions,
+      'startDate': _startDate,
+      'endDate': _endDate,
       'notes': _notesController.text.trim(),
     };
     
@@ -210,6 +229,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 medicationType: _medicationType,
                 dosage: _dosage,
                 frequency: _frequency,
+                startDate: _startDate,
+                endDate: _endDate,
                 onTypeTap: () {
                   showModalBottomSheet(
                     context: context,
@@ -257,6 +278,8 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                     ),
                   );
                 },
+                onStartDateTap: () => _pickDate(_startDate, (d) => setState(() => _startDate = d)),
+                onEndDateTap: () => _pickDate(_endDate, (d) => setState(() => _endDate = d)),
                 nameValidator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'İlaç adı girin' : null,
               ),
