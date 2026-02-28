@@ -43,13 +43,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const double _cardRadius = 16;
 
   // ✅ Daha kompakt aralıklar
-  static const double _gapXs = 8;
-  static const double _gapSm = 12;
-  static const double _gapMd = 14;
-  static const double _sectionTop = 14;
-  static const double _sectionBottom = 6;
-  static const double _cardPadding = 14;
-  static const double _cardMarginBottom = 10;
+  static const double _gapXs = 4;
+  static const double _gapSm = 8;
+  static const double _gapMd = 10;
+  static const double _sectionTop = 10;
+  static const double _sectionBottom = 4;
+  static const double _cardPadding = 12;
+  static const double _cardMarginBottom = 8;
 
   bool _isLoading = true;
   String? _errorText;
@@ -287,7 +287,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Form(
             key: _formKey,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(18, 10, 18, 22), // ✅ daha kompakt
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16), // ✅ daha kompakt
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -471,9 +471,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Stack(
             children: [
               CircleAvatar(
-                radius: 52, // ✅ 56 → 52 daha kompakt
+                radius: 48, // ✅ 52 → 48 daha kompakt
                 backgroundColor: AppColors.surfaceLight,
-                child: Icon(Icons.person, size: 52, color: AppColors.secondary),
+                child: Icon(Icons.person, size: 48, color: AppColors.secondary),
               ),
               Positioned(
                 right: 0,
@@ -497,7 +497,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           headerMail,
           style: AppTextStyles.body.copyWith(color: AppColors.textSecLight),
         ),
-        const SizedBox(height: _gapMd), // ✅ 28 → 14
+        const SizedBox(height: _gapMd), // ✅
       ],
     );
   }
@@ -553,7 +553,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.accentTeal, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12), // ✅ 14 → 12
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // ✅
             suffixIcon: suffixIcon != null
                 ? Icon(suffixIcon, color: AppColors.accentTeal, size: 22)
                 : null,
@@ -571,7 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6), // ✅ 8 → 6
+      padding: const EdgeInsets.only(bottom: 4), // ✅ 6 → 4
       child: Text(
         text,
         style: AppTextStyles.body.copyWith(
@@ -608,7 +608,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.all(Radius.circular(12)),
               borderSide: BorderSide(color: AppColors.accentTeal, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12), // ✅
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // ✅
             suffixIcon: Icon(Icons.arrow_drop_down, color: AppColors.accentTeal, size: 22),
           ),
           items: const [
@@ -649,7 +649,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.all(Radius.circular(12)),
                 borderSide: BorderSide(color: AppColors.accentTeal, width: 1.5),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12), // ✅
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // ✅
               suffixIcon: Icon(Icons.calendar_today, color: AppColors.accentTeal, size: 22),
             ),
             child: Text(
