@@ -123,6 +123,7 @@ class ExerciseScreen extends StatelessWidget {
                   Column(
                     children: todayActivities.map((exercise) {
                       return ExerciseActivityTile(
+                        key: ValueKey(exercise.id),
                         title: exercise.activityName,
                         subtitle: "${exercise.durationMinutes} dk - ${exercise.intensityLevel}",
                         calories: "${exercise.estimatedCalories}",

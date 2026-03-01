@@ -218,4 +218,56 @@ Future<List<double>> getWeeklyCalories() async {
   
   return weeklyValues;
 }
+
+
+// 7. Belirli Alanları Güncelleme (Düzenleme Pop-up'ı için)
+  Future<void> updateExerciseFields({
+    required String id, 
+    required int duration, 
+    double? sugarBefore
+  }) async {
+    try {
+      final String? uid = _auth.currentUser?.uid;
+      if (uid == null) throw Exception("Kullanıcı girişi yapılmamış!");
+
+      // Süre değiştiği için tahmini kaloriyi de yeniden hesaplayalım (Dakika başı ~7 kcal gibi genel bir kabulle)
+      // Eğer modelinde özel bir çarpan varsa onu da kullanabilirsin.
+      int newCalories = duration * 7; 
+
+      await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('exercises')
+          .doc(id)
+          .update({
+            'durationMinutes': duration,
+            'glucoseBefore': sugarBefore,
+            'estimatedCalories': newCalories, // Süre uzarsa/kısalırsa kalori de güncellensin
+          });
+          
+      debugPrint("Alanlar başarıyla güncellendi.");
+    } catch (e) {
+      debugPrint("Firestore Alan Güncelleme Hatası: $e");
+    }
+  }
+
+
+  Future<void> deleteExercise(String docId) async {
+  try {
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+
+    // ÖNEMLİ: users -> UID -> exercises -> DOC_ID
+    await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('exercises')
+        .doc(docId) // Buradaki ID Firestore'daki otomatik ID olmalı
+        .delete();
+        
+    debugPrint("Firestore'dan silindi: $docId");
+  } catch (e) {
+    debugPrint("Silme hatası: $e");
+  }
+}
 }

@@ -60,7 +60,7 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
     final double? postSugar = double.tryParse(_sugarController.text);
     
     ExerciseModel model = ExerciseModel(
-     id: widget.exerciseId ?? '',
+      id: widget.exerciseId ?? '',
       activityName: widget.title,
       durationMinutes: widget.targetMinutes,
       date: DateTime.now(),
@@ -78,6 +78,47 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
     if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
+  // Çarpı butonu ve Geri tuşu için: Kaydetmeden çıkar
+  void _handleCancelAndExit() async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surfaceLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange),
+            SizedBox(width: 10),
+            Text("Dikkat!", style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          "Egzersiziniz tamamlanmamış sayılacak ve süreniz tekrar başlayacaktır. Çıkmak istediğinize emin misiniz?",
+          style: TextStyle(color: AppColors.textSecLight),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("GERİ DÖN", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("ÇIK", style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      Navigator.of(context).pop(); // Exercise screen'e geri döner
+    }
+  }
+
+  // Alt butondaki "Bitir" aksiyonu: Kaydederek çıkar
   void _handleFinish() async {
     bool sugarEmpty = _sugarController.text.isEmpty;
     bool timeNotFinished = (_seconds > 0 && !_isPreparing);
@@ -101,11 +142,11 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: AppColors.primary),
-            const SizedBox(width: 10),
-            const Text("Dikkat!", style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
+            SizedBox(width: 10),
+            Text("Dikkat!", style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(content, style: const TextStyle(color: AppColors.textSecLight)),
@@ -139,7 +180,7 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, r) { 
         if(didPop) return;
-        _handleFinish(); 
+        _handleCancelAndExit(); // Geri tuşu basıldığında iptal uyarısı ver
       },
       child: Scaffold(
         backgroundColor: AppColors.backgroundLight,
@@ -150,7 +191,7 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.close, color: AppColors.secondary), 
-            onPressed: _handleFinish
+            onPressed: _handleCancelAndExit // Çarpı basıldığında iptal uyarısı ver
           ),
         ),
         body: Column(
@@ -180,7 +221,7 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
               padding: const EdgeInsets.fromLTRB(30, 0, 30, 80),
               child: StatusActionButton(
                 label: _seconds == 0 ? "Tamamladım" : "Egzersizi Bitir",
-                onPressed: _handleFinish,
+                onPressed: _handleFinish, // Kayıt süreci buradan devam eder
               ),
             ),
           ],
