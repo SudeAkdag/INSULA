@@ -1,80 +1,24 @@
 import 'package:insula/data/models/index.dart';
 
+/// Beslenme modülünün veri katmanı.
+/// Firestore CRUD işlemleri NutritionViewModel'de yönetilir.
+/// Bu sınıf yalnızca harici API entegrasyonu gibi ek veri kaynağı
+/// işlemlerini barındırmak için kullanılır.
 class NutritionRepository {
-  /// Tasarımdaki günlük öğün listesini getirir.
-  /// Future kullanımı, ileride gerçek bir API veya veritabanına 
-  /// geçildiğinde kodun bozulmamasını sağlar.
-  Future<List<Meal>> getDailyMeals() async {
-    // İnternet veya veritabanı gecikmesini simüle etmek için 500ms bekleme ekliyoruz.
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    return [
-      // KAHVALTI VERİSİ
-      Meal(
-        type: "Kahvaltı", 
-        time: "08:30", 
-        items: [
-          FoodItem(
-            name: "Yulaf Ezmesi (Sütlü)", 
-            portion: "1 kase", 
-            calories: 220, 
-            carbs: 30.0, 
-            sugar: 5.0,
-            fiber: 8.0,
-          ),
-          FoodItem(
-            name: "Yeşil Elma", 
-            portion: "1 orta boy", 
-            calories: 52, 
-            carbs: 15.0, 
-            sugar: 10.0,
-            fiber: 4.0,
-          ),
-        ],
-      ),
-      
-      // ÖĞLE YEMEĞİ VERİSİ
-      Meal(
-        type: "Öğle Yemeği", 
-        time: "13:15", 
-        items: [
-          FoodItem(
-            name: "Izgara Tavuk Göğsü", 
-            portion: "200g", 
-            calories: 330, 
-            carbs: 0.0, 
-            sugar: 0.0,
-            fiber: 0.0,
-          ),
-          FoodItem(
-            name: "Bulgur Pilavı", 
-            portion: "1 porsiyon", 
-            calories: 180, 
-            carbs: 45.0, 
-            sugar: 1.0,
-            fiber: 6.0,
-          ),
-          FoodItem(
-            name: "Yoğurt", 
-            portion: "1 kase", 
-            calories: 110, 
-            carbs: 20.0, 
-            sugar: 8.0,
-            fiber: 0.0,
-          ),
-        ],
-      ),
-      // YENİ: Akşam Yemeği (Henüz girilmedi)
-      Meal(type: "Akşam Yemeği", items: []),
-  
-      // YENİ: Ara Öğünler (Henüz girilmedi)
-      Meal(type: "Ara Öğünler", items: []),
-    ];
-  }
-
-  /// Yeni bir öğün veya besin eklemek için kullanılan fonksiyon iskeleti.
-  Future<void> addFoodItem(String mealType, FoodItem item) async {
-    // Burada ileride veritabanı (SQLite/Firebase) kodları olacak.
-    print("${item.name} $mealType öğününe eklendi.");
+  /// Besin araması yapar.
+  ///
+  /// Bu metod ileride Open Food Facts API'sine
+  /// (https://world.openfoodfacts.org/cgi/search.pl) bağlanacak.
+  /// [query] parametresi ile ürün adı veya barkod ile arama yapılacak,
+  /// dönen JSON yanıtı parse edilerek [FoodItem] listesi elde edilecek.
+  /// Örnek endpoint:
+  /// GET https://world.openfoodfacts.org/cgi/search.pl?search_terms={query}&search_simple=1&action=process&json=1
+  /// Yanıttaki her ürün için: product_name, nutriments.carbohydrates_100g,
+  /// nutriments.proteins_100g, nutriments.fat_100g, nutriments.sugars_100g,
+  /// nutriments.fiber_100g, nutriments.energy-kcal_100g alanları kullanılacak.
+  Future<List<FoodItem>> searchFood(String query) async {
+    // TODO: Gerçek API entegrasyonu burada yapılacak
+    // Şimdilik boş liste döndürülüyor; bu beklenen bir durumdur.
+    return [];
   }
 }
