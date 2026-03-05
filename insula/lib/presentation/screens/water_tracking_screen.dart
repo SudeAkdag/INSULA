@@ -2,6 +2,7 @@
 
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
@@ -39,6 +40,117 @@ class _WaterTrackingScreenState extends State<WaterTrackingScreen>
     super.dispose();
   }
 
+  void _openSettingsSheet() {
+    final targetController =
+        TextEditingController(text: _dailyTarget.toInt().toString());
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfaceLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Ayarlar",
+                style: AppTextStyles.h1.copyWith(
+                  color: AppColors.textMainLight,
+                  fontSize: 20,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Günlük su hedefi (ml)",
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecLight,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: targetController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: "Örn. 2500",
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 2,
+                  ),
+                  onPressed: () {
+                    final value =
+                        double.tryParse(targetController.text.trim());
+                    if (value != null && value > 0) {
+                      setState(() {
+                        _dailyTarget = value;
+                        if (_currentIntake > _dailyTarget) {
+                          _currentIntake = _dailyTarget;
+                        }
+                      });
+                    }
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    "Hedefi Kaydet",
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textMainDark,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Divider(color: AppColors.textSecLight.withOpacity(0.2)),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _currentIntake = 0;
+                  });
+                  Navigator.of(context).pop();
+                },
+                icon: const Icon(
+                  Icons.refresh,
+                  color: AppColors.tertiary,
+                ),
+                label: Text(
+                  "Bugünkü tüketimi sıfırla",
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.tertiary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _addWater(double amount) {
     setState(() {
       _currentIntake += amount;
@@ -48,6 +160,90 @@ class _WaterTrackingScreenState extends State<WaterTrackingScreen>
         // Usually overflow is fine but for wave animation mapping we need to be careful.
       }
     });
+  }
+
+  void _showManualAddBottomSheet() {
+    final controller = TextEditingController(text: '0');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surfaceLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Manuel Su Ekle",
+                style: AppTextStyles.h1.copyWith(
+                  color: AppColors.textMainLight,
+                  fontSize: 20,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Miktar (ml)",
+                style: AppTextStyles.body.copyWith(
+                  color: AppColors.textSecLight,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: "Örn. 250",
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 2,
+                  ),
+                  onPressed: () {
+                    final value = double.tryParse(controller.text.trim());
+                    if (value == null || value <= 0) {
+                      Navigator.of(context).pop();
+                      return;
+                    }
+                    _addWater(value);
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    "Ekle",
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textMainDark,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -72,7 +268,7 @@ class _WaterTrackingScreenState extends State<WaterTrackingScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: AppColors.textMainLight),
-            onPressed: () {},
+            onPressed: _openSettingsSheet,
           ),
         ],
       ),
@@ -195,11 +391,9 @@ class _WaterTrackingScreenState extends State<WaterTrackingScreen>
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: () {
-                        _addWater(100);
-                      },
+                      onPressed: _showManualAddBottomSheet,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
+                        backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),

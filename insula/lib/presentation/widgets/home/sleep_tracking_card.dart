@@ -1,7 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../screens/sleep_tracking_screen.dart';
 
 class SleepTrackingCard extends StatelessWidget {
   const SleepTrackingCard({super.key});
@@ -12,11 +14,11 @@ class SleepTrackingCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF2C3E50), // Midnight Blue for sleep
+        color: AppColors.surfaceDark,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2C3E50).withOpacity(0.3),
+            color: AppColors.surfaceDark.withOpacity(0.4),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -63,8 +65,10 @@ class SleepTrackingCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         "Uyku Takibi",
-                        style: AppTextStyles.h1
-                            .copyWith(color: Colors.white, fontSize: 18),
+                        style: AppTextStyles.h1.copyWith(
+                          color: AppColors.textMainDark,
+                          fontSize: 18,
+                        ),
                       ),
                     ],
                   ),
@@ -77,7 +81,9 @@ class SleepTrackingCard extends StatelessWidget {
                     ),
                     child: Text(
                       "Hedef: 8s",
-                      style: AppTextStyles.label.copyWith(color: Colors.white),
+                      style: AppTextStyles.label.copyWith(
+                        color: AppColors.textMainDark,
+                      ),
                     ),
                   ),
                 ],
@@ -95,14 +101,14 @@ class SleepTrackingCard extends StatelessWidget {
                           children: [
                             Text(
                               "6.5",
-                              style: AppTextStyles.h1
-                                  .copyWith(color: Colors.white, fontSize: 36),
+                              style: AppTextStyles.h1.copyWith(
+                                  color: AppColors.textMainDark, fontSize: 36),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               "Saat",
                               style: AppTextStyles.body.copyWith(
-                                  color: Colors.white.withOpacity(0.8)),
+                                  color: AppColors.textSecDark),
                             ),
                           ],
                         ),
@@ -112,8 +118,10 @@ class SleepTrackingCard extends StatelessWidget {
                           child: LinearProgressIndicator(
                             value: 0.81, // 6.5 / 8
                             backgroundColor: Colors.black.withOpacity(0.2),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                                Color(0xFF9B59B6)), // Purple for sleep
+                            valueColor:
+                                const AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
                             minHeight: 8,
                           ),
                         ),
@@ -125,7 +133,7 @@ class SleepTrackingCard extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.surfaceLight,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -136,8 +144,15 @@ class SleepTrackingCard extends StatelessWidget {
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.add, color: Color(0xFF2C3E50)),
-                      onPressed: () {},
+                      icon: const Icon(Icons.add, color: AppColors.primary),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SleepTrackingScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
