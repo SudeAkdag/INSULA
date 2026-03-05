@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '/core/theme/app_colors.dart';
 import '/core/theme/app_text_styles.dart';
 import '/core/theme/app_constants.dart';
+import '/core/theme/nutrient_colors.dart';
 
 /// Günlük beslenme özetini gösteren kart bileşeni.
-/// Karbonhidrat ilerleme çubuğu ve 2x2 besin değerleri grid'i içerir.
+/// Karbonhidrat ilerleme çubuğu ve besin değerleri grid'i içerir.
 class NutritionSummaryCard extends StatelessWidget {
   final double currentCarbs;
   final int carbGoal;
@@ -93,7 +94,6 @@ class NutritionSummaryCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Kalem ikonu – tıklanınca hedef güncelleme diyaloğu açılır
                     GestureDetector(
                       onTap: () => _showCarbGoalDialog(context),
                       child: Container(
@@ -126,11 +126,11 @@ class NutritionSummaryCard extends StatelessWidget {
                     widthFactor: progress,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
+                        color: NutrientColors.carbs,
                         borderRadius: BorderRadius.circular(AppRadius.full),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4),
+                            color: NutrientColors.carbs.withOpacity(0.4),
                             blurRadius: 8,
                           ),
                         ],
@@ -140,44 +140,55 @@ class NutritionSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // 2x2 Besin değerleri grid'i
+                // 3-2 Besin değerleri grid'i (3 üstte, 2 altta)
                 Column(
                   children: [
+                    // Üst satır: Şeker | Lif | Karbonhidrat
                     Row(
                       children: [
                         Expanded(
                           child: _buildNutrientInfo(
                             'Şeker',
                             '${sugar.toInt()}g',
-                            AppColors.tertiary,
+                            NutrientColors.sugar,
                           ),
                         ),
                         Expanded(
                           child: _buildNutrientInfo(
                             'Lif',
                             '${fiber.toInt()}g',
-                            AppColors.secondary,
+                            NutrientColors.fiber,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildNutrientInfo(
+                            'Karbonhidrat',
+                            '${currentCarbs.toInt()}g',
+                            NutrientColors.carbs,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
+                    // Alt satır: Protein | Yağ
                     Row(
                       children: [
                         Expanded(
                           child: _buildNutrientInfo(
                             'Protein',
                             '${protein.toInt()}g',
-                            AppColors.primary,
+                            NutrientColors.protein,
                           ),
                         ),
                         Expanded(
                           child: _buildNutrientInfo(
                             'Yağ',
                             '${fat.toInt()}g',
-                            Colors.purple.shade300,
+                            NutrientColors.fat,
                           ),
                         ),
+                        // Boş alan – simetri için
+                        const Expanded(child: SizedBox()),
                       ],
                     ),
                   ],
