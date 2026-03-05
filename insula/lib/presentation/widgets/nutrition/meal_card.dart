@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '/core/theme/app_colors.dart';
 import '/core/theme/app_text_styles.dart';
 import '/core/theme/app_constants.dart';
+import '/core/theme/nutrient_colors.dart';
 import '/data/models/index.dart';
 
 /// Bir öğünü ve içindeki besin öğelerini gösteren kart bileşeni.
@@ -274,7 +275,7 @@ class MealCard extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // 2x3 besin değerleri grid'i
+              // 2x3 besin değerleri grid'i – NutrientColors ile tutarlı
               GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
@@ -286,31 +287,31 @@ class MealCard extends StatelessWidget {
                   _buildNutrientTile(
                     label: 'Karbonhidrat',
                     value: '${item.carbs.toStringAsFixed(1)}g',
-                    color: AppColors.primary,
+                    color: NutrientColors.carbs,
                     icon: Icons.grain,
                   ),
                   _buildNutrientTile(
                     label: 'Protein',
                     value: '${item.protein.toStringAsFixed(1)}g',
-                    color: AppColors.secondary,
+                    color: NutrientColors.protein,
                     icon: Icons.fitness_center,
                   ),
                   _buildNutrientTile(
                     label: 'Yağ',
                     value: '${item.fat.toStringAsFixed(1)}g',
-                    color: Colors.purple.shade300,
+                    color: NutrientColors.fat,
                     icon: Icons.water_drop_outlined,
                   ),
                   _buildNutrientTile(
                     label: 'Şeker',
                     value: '${item.sugar.toStringAsFixed(1)}g',
-                    color: AppColors.tertiary,
+                    color: NutrientColors.sugar,
                     icon: Icons.icecream_outlined,
                   ),
                   _buildNutrientTile(
                     label: 'Lif',
                     value: '${item.fiber.toStringAsFixed(1)}g',
-                    color: Colors.green.shade400,
+                    color: NutrientColors.fiber,
                     icon: Icons.eco_outlined,
                   ),
                 ],
@@ -389,10 +390,10 @@ class MealCard extends StatelessWidget {
   }
 
   Color _getMealColor(String type) {
-    if (type == 'Kahvaltı') return AppColors.primary;
-    if (type == 'Öğle Yemeği') return AppColors.tertiary;
-    if (type == 'Akşam Yemeği') return AppColors.secondary;
-    return AppColors.secondary;
+    if (type == 'Kahvaltı') return AppColors.primary; // Sarı
+    if (type == 'Öğle Yemeği') return AppColors.tertiary; // Turuncu
+    if (type == 'Akşam Yemeği') return AppColors.secondary; // Teal
+    return Colors.purple.shade400; // Ara Öğünler → Mor
   }
 
   IconData _getMealIcon(String type) {

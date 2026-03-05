@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +10,7 @@ import '/core/theme/app_text_styles.dart';
 import '/core/theme/app_constants.dart';
 
 /// Belirli bir öğüne besin ekleme ekranı.
-/// Manuel form girişi ve (ilerleyen sürümde) Open Food Facts API araması içerir.
+/// Open Food Facts API araması (debounce) + manuel form içerir.
 class AddFoodScreen extends StatefulWidget {
   /// Besinin ekleneceği öğün tipi (ör. "Kahvaltı")
   final String mealType;
@@ -35,6 +36,10 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<FoodItem> _searchResults = [];
   bool _isSearching = false;
+  bool _selectedFromSearch = false;
+
+  // Debounce
+  Timer? _debounce;
 
   // Form alanları
   final TextEditingController _nameController = TextEditingController();
@@ -50,6 +55,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     _nameController.dispose();
     _portionController.dispose();
@@ -62,14 +68,27 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     super.dispose();
   }
 
-  /// Open Food Facts API araması (şimdilik boş liste döner)
-  Future<void> _search(String query) async {
+  /// 600ms debounce ile arama tetikler.
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
     if (query.trim().isEmpty) {
       setState(() => _searchResults = []);
       return;
     }
-    setState(() => _isSearching = true);
+    _debounce = Timer(const Duration(milliseconds: 600), () {
+      if (query.trim().length >= 2) _performSearch(query.trim());
+    });
+  }
+
+  /// Open Food Facts API araması
+  Future<void> _performSearch(String query) async {
+    if (!mounted) return;
+    setState(() {
+      _isSearching = true;
+      _selectedFromSearch = false;
+    });
     final results = await _repository.searchFood(query);
+    if (!mounted) return;
     setState(() {
       _searchResults = results;
       _isSearching = false;
@@ -81,12 +100,15 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     _nameController.text = item.name;
     _portionController.text = item.portion;
     _caloriesController.text = item.calories.toString();
-    _carbsController.text = item.carbs.toString();
-    _proteinController.text = item.protein.toString();
-    _fatController.text = item.fat.toString();
-    _sugarController.text = item.sugar.toString();
-    _fiberController.text = item.fiber.toString();
-    setState(() => _searchResults = []);
+    _carbsController.text = item.carbs.toStringAsFixed(1);
+    _proteinController.text = item.protein.toStringAsFixed(1);
+    _fatController.text = item.fat.toStringAsFixed(1);
+    _sugarController.text = item.sugar.toStringAsFixed(1);
+    _fiberController.text = item.fiber.toStringAsFixed(1);
+    setState(() {
+      _searchResults = [];
+      _selectedFromSearch = true;
+    });
   }
 
   /// Formu kaydeder ve ViewModel'e iletir
@@ -95,15 +117,19 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
 
     setState(() => _isSaving = true);
 
+    // Türkçe klavye için virgülü noktaya çevir
+    double _parse(String raw) =>
+        double.tryParse(raw.trim().replaceAll(',', '.')) ?? 0.0;
+
     final item = FoodItem(
       name: _nameController.text.trim(),
       portion: _portionController.text.trim(),
-      calories: int.tryParse(_caloriesController.text) ?? 0,
-      carbs: double.tryParse(_carbsController.text) ?? 0.0,
-      protein: double.tryParse(_proteinController.text) ?? 0.0,
-      fat: double.tryParse(_fatController.text) ?? 0.0,
-      sugar: double.tryParse(_sugarController.text) ?? 0.0,
-      fiber: double.tryParse(_fiberController.text) ?? 0.0,
+      calories: int.tryParse(_caloriesController.text.trim()) ?? 0,
+      carbs: _parse(_carbsController.text),
+      protein: _parse(_proteinController.text),
+      fat: _parse(_fatController.text),
+      sugar: _parse(_sugarController.text),
+      fiber: _parse(_fiberController.text),
     );
 
     try {
@@ -152,7 +178,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             _buildSearchBar(),
             const SizedBox(height: 8),
 
-            // Arama sonuçları (ileride API'den gelecek)
+            // Arama sonuçları
             if (_isSearching)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
@@ -160,7 +186,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                   child: CircularProgressIndicator(color: AppColors.primary),
                 ),
               ),
-            if (_searchResults.isNotEmpty) _buildSearchResults(),
+            if (!_isSearching && _searchResults.isNotEmpty)
+              _buildSearchResults(),
 
             const SizedBox(height: 16),
 
@@ -183,9 +210,33 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Manuel Giriş',
-                      style: AppTextStyles.h1.copyWith(fontSize: 16),
+                    Row(
+                      children: [
+                        Text(
+                          'Manuel Giriş',
+                          style: AppTextStyles.h1.copyWith(fontSize: 16),
+                        ),
+                        if (_selectedFromSearch) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.secondary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'API\'den dolduruldu',
+                              style: AppTextStyles.label.copyWith(
+                                color: AppColors.secondary,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 16),
 
@@ -331,10 +382,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       ),
       child: TextField(
         controller: _searchController,
-        onSubmitted: _search,
-        onChanged: (val) {
-          if (val.isEmpty) setState(() => _searchResults = []);
-        },
+        onChanged: _onSearchChanged,
         decoration: InputDecoration(
           hintText: 'Besin ara (ör. elma, yulaf)…',
           hintStyle: AppTextStyles.label,
@@ -342,15 +390,34 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             Icons.search,
             color: AppColors.textSecLight,
           ),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.clear, color: AppColors.textSecLight),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() => _searchResults = []);
-                  },
+          // Arama yapılırken sağda küçük progress göster
+          suffixIcon: _isSearching
+              ? const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: AppColors.secondary,
+                      strokeWidth: 2,
+                    ),
+                  ),
                 )
-              : null,
+              : _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.clear,
+                        color: AppColors.textSecLight,
+                      ),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _searchResults = [];
+                          _selectedFromSearch = false;
+                        });
+                      },
+                    )
+                  : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg),
             borderSide: BorderSide.none,
@@ -366,37 +433,90 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     );
   }
 
+  /// Arama sonuçları listesi
   Widget _buildSearchResults() {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
         border: Border.all(color: AppColors.backgroundLight),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
-        children: _searchResults
-            .map(
-              (item) => ListTile(
-                title: Text(item.name, style: AppTextStyles.body),
-                subtitle: Text(
-                  '${item.calories} kcal • ${item.carbs}g karb',
-                  style: AppTextStyles.label,
-                ),
-                trailing: const Icon(
-                  Icons.add_circle_outline,
-                  color: AppColors.tertiary,
-                ),
+        children: _searchResults.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final isLast = index == _searchResults.length - 1;
+          return Column(
+            children: [
+              InkWell(
                 onTap: () => _fillFromSearchResult(item),
+                borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.name,
+                              style: AppTextStyles.body.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '100g başına • ${item.carbs.toStringAsFixed(1)}g karb',
+                              style: AppTextStyles.label,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: AppColors.primary,
+                          size: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            )
-            .toList(),
+              if (!isLast)
+                Divider(
+                  height: 1,
+                  color: AppColors.backgroundLight.withOpacity(0.8),
+                  indent: 16,
+                  endIndent: 16,
+                ),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
 
   /// Tek bir form alanı oluşturur.
-  /// [numeric] true ise yalnızca rakam ve ondalık nokta kabul edilir;
-  /// harf girilmesi hem klavyede hem validator'da engellenir.
   Widget _buildField({
     required TextEditingController controller,
     required String label,
@@ -411,7 +531,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
         keyboardType: numeric
             ? const TextInputType.numberWithOptions(decimal: true)
             : TextInputType.text,
-        // Sayısal alanlarda harf girişini klavye seviyesinde engelle
         inputFormatters: numeric
             ? [
                 FilteringTextInputFormatter.allow(
@@ -448,13 +567,10 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
           ),
         ),
         validator: (val) {
-          // Zorunlu alan kontrolü
           if (required && (val == null || val.trim().isEmpty)) {
             return '$label alanı boş bırakılamaz';
           }
-          // Sayısal alan kontrolü: dolu ise geçerli sayı olmalı
           if (numeric && val != null && val.trim().isNotEmpty) {
-            // Virgülü noktaya çevirerek parse et (Türkçe klavye uyumluluğu)
             final normalized = val.trim().replaceAll(',', '.');
             final parsed = double.tryParse(normalized);
             if (parsed == null) {
