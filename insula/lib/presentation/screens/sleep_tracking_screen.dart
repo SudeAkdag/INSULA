@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -297,4 +299,3 @@ class _TimePickerTile extends StatelessWidget {
     );
   }
 }
-
