@@ -118,7 +118,7 @@ class _NutritionScreenContent extends StatelessWidget {
             if (_shouldShowBackToToday(vm.selectedDate))
               OutlinedButton.icon(
                 onPressed: () => vm.changeDate(DateTime.now()),
-                icon: const Icon(Icons.today, size: 13),
+                icon: const Icon(Icons.today, size: 25),
                 label: const Text('Bugüne Dön'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.secondary,
