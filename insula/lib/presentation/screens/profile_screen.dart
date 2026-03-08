@@ -61,13 +61,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   static const double _cardRadius = 16;
 
-  // ✅ Daha kompakt aralıklar
+  // ✅ Breathable spacing restored
   static const double _gapXs = 4;
   static const double _gapSm = 8;
   static const double _gapMd = 10;
   static const double _sectionTop = 10;
   static const double _sectionBottom = 4;
-  static const double _cardPadding = 12;
+  static const double _cardPadding = 11;
   static const double _cardMarginBottom = 8;
 
   bool _isLoading = true;
@@ -357,7 +357,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Form(
             key: _formKey,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16), // ✅ daha kompakt
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24), // ✅ Breathable padding
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -657,7 +657,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Stack(
             children: [
               CircleAvatar(
-                radius: 48, // ✅ 52 → 48 daha kompakt
+                radius: 48, // ✅ Standard size restored
                 backgroundColor: AppColors.surfaceLight,
                 child: Icon(Icons.person, size: 48, color: AppColors.secondary),
               ),
@@ -665,7 +665,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 right: 0,
                 bottom: 0,
                 child: CircleAvatar(
-                  radius: 16, // ✅ 18 → 16
+                  radius: 16, // ✅ Standard size restored
                   backgroundColor: AppColors.primary,
                   child: const Icon(Icons.camera_alt, size: 16, color: AppColors.secondary),
                 ),
@@ -723,6 +723,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           readOnly: readOnly,
           style: AppTextStyles.body,
           decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             hintText: hintText,
             hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
             filled: true,
@@ -739,7 +741,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.accentTeal, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // ✅
             suffixIcon: suffixIcon != null
                 ? Icon(suffixIcon, color: AppColors.accentTeal, size: 22)
                 : null,
@@ -778,6 +779,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           value: _gender,
           isExpanded: true,
           decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             hintText: 'Cinsiyet Seçiniz',
             hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
             filled: true,
@@ -794,7 +797,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.all(Radius.circular(12)),
               borderSide: BorderSide(color: AppColors.accentTeal, width: 1.5),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // ✅
             suffixIcon: Icon(Icons.arrow_drop_down, color: AppColors.accentTeal, size: 22),
           ),
           items: const [
@@ -820,6 +822,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onTap: _isLoading ? null : _pickDob,
           child: InputDecorator(
             decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               hintText: 'Örn: 15/05/1990',
               hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
               filled: true,
@@ -836,7 +840,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.all(Radius.circular(12)),
                 borderSide: BorderSide(color: AppColors.accentTeal, width: 1.5),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // ✅
               suffixIcon: Icon(Icons.calendar_today, color: AppColors.accentTeal, size: 22),
             ),
             child: Text(
@@ -1005,6 +1008,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   InputDecoration _dropdownDecoration(String hint) {
     return InputDecoration(
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       hintText: hint,
       hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
       filled: true,
@@ -1021,7 +1026,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.all(Radius.circular(12)),
         borderSide: BorderSide(color: AppColors.accentTeal, width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       suffixIcon: Icon(Icons.arrow_drop_down, color: AppColors.accentTeal, size: 22),
     );
   }
