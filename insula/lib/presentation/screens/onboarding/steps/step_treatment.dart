@@ -25,6 +25,7 @@ class _StepTreatmentState extends State<StepTreatment> {
   bool? _usesInsulin;
   String? _insulinType;
   String? _deliveryMethod;
+  int _carbRatio = 10; // 1 ünite / 10g karb (varsayılan)
 
   static const _insulinTypes = ['Hızlı etkili', 'Uzun etkili', 'Karma'];
   static const _deliveryMethods = ['Kalem', 'Pompa'];
@@ -35,6 +36,7 @@ class _StepTreatmentState extends State<StepTreatment> {
     _usesInsulin = widget.data.usesInsulin;
     _insulinType = widget.data.insulinType;
     _deliveryMethod = widget.data.insulinDeliveryMethod;
+    _carbRatio = widget.data.carbRatio ?? 10;
   }
 
   void _emit() {
@@ -42,6 +44,7 @@ class _StepTreatmentState extends State<StepTreatment> {
       usesInsulin: _usesInsulin,
       insulinType: _usesInsulin == true ? _insulinType : null,
       insulinDeliveryMethod: _usesInsulin == true ? _deliveryMethod : null,
+      carbRatio: _usesInsulin == true ? _carbRatio : null,
     ));
   }
 
@@ -152,6 +155,32 @@ class _StepTreatmentState extends State<StepTreatment> {
                       onTap: () {
                         setState(() {
                           _deliveryMethod = m;
+                          _emit();
+                        });
+                      },
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              'Karbonhidrat oranı (1 ünite insülin / kaç g karb?)',
+              style: AppTextStyles.label.copyWith(fontSize: 16, color: AppColors.textMainLight),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [10, 12, 15, 20].map((ratio) {
+                final selected = _carbRatio == ratio;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: OnboardingSelectCard(
+                      label: '1:$ratio',
+                      selected: selected,
+                      onTap: () {
+                        setState(() {
+                          _carbRatio = ratio;
                           _emit();
                         });
                       },

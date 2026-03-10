@@ -1,5 +1,7 @@
 // presentation/screens/main_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:insula/logic/viewmodels/home_viewmodel.dart';
 import '../widgets/drawers/custom_bottom_nav.dart';
 import '../widgets/drawers/custom_side_drawer.dart';
 import 'nutrition_screen.dart';
@@ -35,10 +37,12 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      drawer: const CustomSideDrawer(), 
-      body: Stack(
+    return ChangeNotifierProvider(
+      create: (_) => HomeViewModel(),
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: const CustomSideDrawer(),
+        body: Stack(
         children: [
           // Aktif Sayfa (Listenin doğru elemanını çeker)
           _screens[_selectedIndex],
@@ -59,6 +63,7 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
+    ),
     );
   }
 }

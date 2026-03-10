@@ -18,9 +18,9 @@ class QuickActionsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     // List of quick actions
     final List<Map<String, dynamic>> actions = [
-      {"label": "Su Takibi", "icon": Icons.water_drop},
-      {"label": "Uyku Takibi", "icon": Icons.nightlight},
       {"label": "İnsülin", "icon": Icons.vaccines},
+      {"label": "Uyku Takibi", "icon": Icons.nightlight},
+      {"label": "Su Takibi", "icon": Icons.water_drop},
       {"label": "İlaç", "icon": Icons.medication},
       {"label": "Acil Durum", "icon": Icons.warning},
     ];

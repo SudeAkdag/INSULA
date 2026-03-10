@@ -14,6 +14,7 @@ class OnboardingData {
     this.usesInsulin,
     this.insulinType,
     this.insulinDeliveryMethod,
+    this.carbRatio,
     this.glucoseMeasurementFrequency,
     this.usesCgm,
     this.targetGlucoseMin,
@@ -46,6 +47,7 @@ class OnboardingData {
   bool? usesInsulin;
   String? insulinType; // Hızlı, Uzun etkili, Karma
   String? insulinDeliveryMethod; // Kalem, Pompa
+  int? carbRatio; // 1 ünite insülin / X g karbonhidrat (örn: 10 = 1:10)
 
   // Glikoz izleme
   String? glucoseMeasurementFrequency; // Günlük ölçüm sıklığı
@@ -81,6 +83,7 @@ class OnboardingData {
     bool? usesInsulin,
     String? insulinType,
     String? insulinDeliveryMethod,
+    int? carbRatio,
     String? glucoseMeasurementFrequency,
     bool? usesCgm,
     int? targetGlucoseMin,
@@ -108,6 +111,7 @@ class OnboardingData {
       usesInsulin: usesInsulin ?? this.usesInsulin,
       insulinType: insulinType ?? this.insulinType,
       insulinDeliveryMethod: insulinDeliveryMethod ?? this.insulinDeliveryMethod,
+      carbRatio: carbRatio ?? this.carbRatio,
       glucoseMeasurementFrequency:
           glucoseMeasurementFrequency ?? this.glucoseMeasurementFrequency,
       usesCgm: usesCgm ?? this.usesCgm,
@@ -148,6 +152,7 @@ class OnboardingData {
     if (weightKg != null) out['weight'] = weightKg;
     if (diagnosisYear != null) out['diagnosisYear'] = diagnosisYear;
     if (usesInsulin != null) out['usesInsulin'] = usesInsulin;
+    if (carbRatio != null) out['carbRatio'] = carbRatio;
     if (usesCgm != null) out['usesCgm'] = usesCgm;
     if (targetGlucoseMin != null) out['targetGlucoseMin'] = targetGlucoseMin;
     if (targetGlucoseMax != null) out['targetGlucoseMax'] = targetGlucoseMax;
