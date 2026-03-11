@@ -36,14 +36,12 @@ class NutritionRepository {
     }
 
     // Türkçe ürün adı mevcutsa
-    final String productNameTr =
-        (product['product_name_tr'] ?? '').toString();
+    final String productNameTr = (product['product_name_tr'] ?? '').toString();
     if (productNameTr.isNotEmpty) score += 15;
 
     // Besin değerleri eksiksizlik kontrolü
     final nutriments = product['nutriments'] ?? {};
-    final double? kcal =
-        (nutriments['energy-kcal_100g'] as num?)?.toDouble();
+    final double? kcal = (nutriments['energy-kcal_100g'] as num?)?.toDouble();
     final double? carbs =
         (nutriments['carbohydrates_100g'] as num?)?.toDouble();
     final double? protein = (nutriments['proteins_100g'] as num?)?.toDouble();
@@ -86,9 +84,8 @@ class NutritionRepository {
         'search_simple': '1',
         'action': 'process',
         'json': '1',
-        'page_size': '20',
-        'fields':
-            'product_name,product_name_tr,nutriments,serving_size,quantity,countries_tags',
+        'page_size': '10',
+        'fields': 'product_name,product_name_tr,nutriments,countries_tags',
       };
       if (trOnly) {
         params['cc'] = 'tr';
@@ -110,8 +107,7 @@ class NutritionRepository {
 
       final Map<String, dynamic> body =
           jsonDecode(response.body) as Map<String, dynamic>;
-      final List<dynamic> products =
-          body['products'] as List<dynamic>? ?? [];
+      final List<dynamic> products = body['products'] as List<dynamic>? ?? [];
 
       // (product, score) tuple listesi oluştur
       final scored = <MapEntry<Map<String, dynamic>, int>>[];
@@ -131,8 +127,7 @@ class NutritionRepository {
       for (final entry in scored) {
         final product = entry.key;
         final name = (product['product_name'] as String?)?.trim() ?? '';
-        final nutriments =
-            product['nutriments'] as Map<String, dynamic>? ?? {};
+        final nutriments = product['nutriments'] as Map<String, dynamic>? ?? {};
 
         final double calories;
         if (nutriments.containsKey('energy-kcal_100g')) {
@@ -148,8 +143,7 @@ class NutritionRepository {
           name: name,
           portion: '100g',
           calories: calories.round(),
-          carbs:
-              (nutriments['carbohydrates_100g'] as num?)?.toDouble() ?? 0.0,
+          carbs: (nutriments['carbohydrates_100g'] as num?)?.toDouble() ?? 0.0,
           protein: (nutriments['proteins_100g'] as num?)?.toDouble() ?? 0.0,
           fat: (nutriments['fat_100g'] as num?)?.toDouble() ?? 0.0,
           sugar: (nutriments['sugars_100g'] as num?)?.toDouble() ?? 0.0,
@@ -241,11 +235,9 @@ class NutritionRepository {
 
       final double calories;
       if (nutriments.containsKey('energy-kcal_100g')) {
-        calories =
-            (nutriments['energy-kcal_100g'] as num?)?.toDouble() ?? 0.0;
+        calories = (nutriments['energy-kcal_100g'] as num?)?.toDouble() ?? 0.0;
       } else {
-        final energyKj =
-            (nutriments['energy_100g'] as num?)?.toDouble() ?? 0.0;
+        final energyKj = (nutriments['energy_100g'] as num?)?.toDouble() ?? 0.0;
         calories = energyKj / 4.184;
       }
 
@@ -253,8 +245,7 @@ class NutritionRepository {
         name: name,
         portion: '100g',
         calories: calories.round(),
-        carbs:
-            (nutriments['carbohydrates_100g'] as num?)?.toDouble() ?? 0.0,
+        carbs: (nutriments['carbohydrates_100g'] as num?)?.toDouble() ?? 0.0,
         protein: (nutriments['proteins_100g'] as num?)?.toDouble() ?? 0.0,
         fat: (nutriments['fat_100g'] as num?)?.toDouble() ?? 0.0,
         sugar: (nutriments['sugars_100g'] as num?)?.toDouble() ?? 0.0,
