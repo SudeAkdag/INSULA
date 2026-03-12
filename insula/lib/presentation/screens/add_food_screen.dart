@@ -36,9 +36,9 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
 
   // Arama
   final TextEditingController _searchController = TextEditingController();
-  List<FoodItem> _localResults = [];   // Anında gelen yerel sonuçlar
-  List<FoodItem> _apiResults = [];     // Arka planda gelen API sonuçları
-  bool _isApiLoading = false;          // Sadece API bekleniyor mu?
+  List<FoodItem> _localResults = []; // Anında gelen yerel sonuçlar
+  List<FoodItem> _apiResults = []; // Arka planda gelen API sonuçları
+  bool _isApiLoading = false; // Sadece API bekleniyor mu?
   bool _selectedFromSearch = false;
 
   // Debounce (yalnızca API için)
@@ -94,10 +94,28 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
       return;
     }
 
-    // Adım 1: Yerel sonuçları ANINDA göster (debounce yok)
+    // Adım 1: Yerel sonuçlar + kullanıcı besinlerini ANINDA göster (debounce yok)
     if (trimmed.length >= 2) {
+      final vm = context.read<NutritionViewModel>();
+      final localTr = TurkishFoodsData.search(trimmed);
+      final normalizedQuery = trimmed.toLowerCase();
+      final userMatches = vm.userFoods.where((food) {
+        return food.name.toLowerCase().contains(normalizedQuery);
+      }).toList();
+
+      // Tekrarları filtrele ve birleştir
+      final seen = <String>{};
+      final merged = <FoodItem>[];
+      for (final item in [...localTr, ...userMatches]) {
+        final key = item.name.toLowerCase().trim();
+        if (!seen.contains(key)) {
+          seen.add(key);
+          merged.add(item);
+        }
+      }
+
       setState(() {
-        _localResults = TurkishFoodsData.search(trimmed);
+        _localResults = merged;
         _isApiLoading = true;
       });
     }
@@ -111,7 +129,11 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
 
   Future<void> _performApiSearch(String query) async {
     try {
-      final results = await _repository.searchFoodLayered(query);
+      final vm = context.read<NutritionViewModel>();
+      final results = await _repository.searchFoodLayered(
+        query,
+        userFoods: vm.userFoods,
+      );
       if (!mounted) return;
       setState(() {
         // Yerel listede zaten olanları API sonuçlarından çıkar
@@ -169,9 +191,10 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     );
 
     try {
-      await context
-          .read<NutritionViewModel>()
-          .addFoodToMeal(widget.mealType, item, widget.date);
+      final vm = context.read<NutritionViewModel>();
+      await vm.addFoodToMeal(widget.mealType, item, widget.date);
+      // Kayıt sonrası userFoods listesini güncelle (arka planda)
+      vm.loadFavoritesAndFrequent();
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) setState(() => _isSaving = false);
@@ -199,7 +222,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.secondary),
+          icon:
+              const Icon(Icons.arrow_back_ios_new, color: AppColors.secondary),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -213,13 +237,15 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            _buildWarningNote(),
+            const SizedBox(height: 8),
             _buildSearchBar(),
             const SizedBox(height: 8),
 
             // Arama aktifse sonuçları göster
             if (isSearchActive) _buildSearchResults(),
 
-            // Arama aktif değilse: favoriler + sık seçilenler
+            // Arama aktif değilse: favoriler + son seçilenler
             if (!isSearchActive) _buildDefaultView(),
 
             const SizedBox(height: 16),
@@ -229,6 +255,44 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             const SizedBox(height: 32),
           ],
         ),
+      ),
+    );
+  }
+
+  // ─ Uyarı Notu ──────────────────────────────────────────────────────
+  Widget _buildWarningNote() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.4),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.info_outline,
+            size: 16,
+            color: AppColors.secondary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Not: Besin değerleri standart ev yapımı tariflere göre hesaplanmıştır. '
+              'Restoran ve hazır gıda ürünleri farklı değerler içerebilir. '
+              'Seçtiğiniz besinlerin içeriğini kaydetmeden önce değiştirebilirsiniz.',
+              style: AppTextStyles.label.copyWith(
+                fontSize: 11,
+                color: AppColors.secondary,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -323,16 +387,14 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
           children: [
             // ── Yerel sonuçlar ──────────────────────────────────────────
             if (hasLocal) ...[
-              if (hasBoth)
-                _buildResultSectionHeader('📍', 'Yerel Sonuçlar'),
+              if (hasBoth) _buildResultSectionHeader('📍', 'Yerel Sonuçlar'),
               _buildResultList(_localResults, vm),
             ],
 
             // ── API sonuçları ───────────────────────────────────────────
             if (hasApi) ...[
               if (hasBoth) const SizedBox(height: 8),
-              if (hasBoth)
-                _buildResultSectionHeader('🌐', 'Diğer Sonuçlar'),
+              if (hasBoth) _buildResultSectionHeader('🌐', 'Diğer Sonuçlar'),
               _buildResultList(_apiResults, vm),
             ],
 
@@ -401,8 +463,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             children: [
               InkWell(
                 onTap: () => _fillFromSearchResult(item),
-                borderRadius:
-                    BorderRadius.circular(AppRadius.defaultRadius),
+                borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
                   child: Row(
@@ -461,7 +522,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     );
   }
 
-  // ─ Default View: Favoriler + Sık Seçilenler ───────────────────────────────
+  // ─ Default View: Favoriler + son Seçilenler ───────────────────────────────
   Widget _buildDefaultView() {
     return Consumer<NutritionViewModel>(
       builder: (context, vm, _) {
@@ -522,7 +583,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             _buildSectionHeader(
               icon: Icons.access_time_rounded,
               iconColor: AppColors.secondary,
-              label: 'Sık Seçilenler',
+              label: 'Son Seçilenler',
             ),
             const SizedBox(height: 8),
             if (vm.frequentFoods.isEmpty)
@@ -539,8 +600,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.surfaceLight,
-                  borderRadius:
-                      BorderRadius.circular(AppRadius.defaultRadius),
+                  borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.04),

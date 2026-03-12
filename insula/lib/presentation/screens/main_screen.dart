@@ -19,14 +19,14 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 1;
+  int _selectedIndex = 2; // Ana Sayfa artık index 2'de
 
   final List<Widget> _screens = [
     const MedicationScreen(), // 0 – İlaç
-    const HomeScreen(), // 1 – Ana Sayfa
-    const NutritionScreen(), // 2 – Beslenme
-    ExerciseScreen(), // 3 – Egzersiz
-    const ProfileScreen(), // 4 – Profil
+    const NutritionScreen(),  // 1 – Beslenme
+    const HomeScreen(),       // 2 – Ana Sayfa (ORTADA)
+    ExerciseScreen(),         // 3 – Egzersiz
+    const ProfileScreen(),    // 4 – Profil
   ];
 
   void _onItemTapped(int index) {
