@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:insula/core/theme/app_colors.dart';
+import 'package:insula/core/theme/app_constants.dart';
 import 'package:insula/core/theme/app_text_styles.dart';
 import 'package:insula/presentation/screens/auth/login_screen.dart';
-import 'package:insula/presentation/screens/auth/register_screen.dart';
+import 'package:insula/presentation/screens/onboarding/onboarding_flow_screen.dart';
 
+/// Karşılama ekranı: Insula ismi, slogan ve "Hadi Başlayalım" ile onboarding'e,
+/// "Zaten hesabım var" ile giriş ekranına yönlendirme.
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
@@ -13,108 +16,103 @@ class WelcomeScreen extends StatelessWidget {
       backgroundColor: AppColors.backgroundLight,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(flex: 2),
-
-              // Logo Area
+              // Logo / ikon
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  // ignore: deprecated_member_use
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.accentTeal.withAlpha(26),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.accentTeal.withAlpha(38),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: const Icon(
-                  Icons.health_and_safety_outlined, // Placeholder for logo
-                  size: 80,
-                  color: AppColors.primary,
+                  Icons.health_and_safety_rounded,
+                  size: 64,
+                  color: AppColors.accentTeal,
                 ),
               ),
-              const SizedBox(height: 40),
-
-              // Title & Subtitle
+              const SizedBox(height: AppSpacing.xl),
+              // Başlık
               Text(
-                'Insula\'ya Hoş Geldiniz',
+                'Insula',
                 style: AppTextStyles.h1.copyWith(
-                  fontSize: 32,
-                  color: AppColors.secondary,
+                  fontSize: 36,
+                  color: AppColors.accentTeal,
+                  letterSpacing: -0.5,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.sm),
               Text(
-                'Kişisel diyabet yönetim arkadaşınız. Sağlık yolculuğunuzu takip edin, analiz edin ve iyileştirin.',
+                'Akıllı diyabet takipçiniz ve yaşam tarzı asistanınız',
                 style: AppTextStyles.body.copyWith(
                   color: AppColors.textSecLight,
-                  height: 1.5,
+                  fontSize: 18,
+                  height: 1.4,
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const Spacer(flex: 3),
-
-              // Buttons
+              // Hadi Başlayalım — geniş, erişilebilir buton
               SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 58,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const LoginScreen()),
+                        builder: (context) => const OnboardingFlowScreen(),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.secondary,
-                    foregroundColor: AppColors.surfaceLight,
+                    backgroundColor: AppColors.accentTeal,
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.defaultRadius),
                     ),
                   ),
                   child: const Text(
-                    'Login',
+                    'Hadi Başlayalım',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const RegisterScreen()),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side:
-                        const BorderSide(color: AppColors.secondary, width: 2),
-                    foregroundColor: AppColors.secondary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+              const SizedBox(height: AppSpacing.lg),
+              // Zaten hesabım var
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
                     ),
-                  ),
-                  child: const Text(
-                    'Sign Up',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  );
+                },
+                child: Text(
+                  'Zaten hesabım var',
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.accentTeal,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-
               const Spacer(),
             ],
           ),

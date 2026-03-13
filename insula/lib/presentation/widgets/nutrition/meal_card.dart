@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '/core/theme/app_colors.dart';
 import '/core/theme/app_text_styles.dart';
 import '/core/theme/app_constants.dart';
+import '/core/theme/nutrient_colors.dart';
 import '/data/models/index.dart';
+import 'package:insula/logic/viewmodels/nutrition_viewmodel.dart';
 
 /// Bir öğünü ve içindeki besin öğelerini gösteren kart bileşeni.
 /// Besin satırına tıklandığında tam besin değerleri bottom sheet olarak açılır.
+/// Bottom sheet içinde favori yıldız ikonu mevcuttur.
 class MealCard extends StatelessWidget {
   final Meal meal;
 
@@ -191,133 +195,174 @@ class MealCard extends StatelessWidget {
   }
 
   /// Besin değerlerini gösteren bottom sheet.
+  /// showModalBottomSheet yeni bir route oluşturduğundan provider scope'unun
+  /// dışına çıkar. Bu nedenle ViewModel, açılmadan önce parent context'ten
+  /// alınıp ChangeNotifierProvider.value ile yeniden enjekte edilir.
   void _showFoodDetail(BuildContext context, FoodItem item) {
+    final vm = Provider.of<NutritionViewModel>(context, listen: false);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surfaceLight,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl),
-            ),
-          ),
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 36),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Tutamaç çizgisi
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.navBar,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+      builder: (sheetContext) {
+        return ChangeNotifierProvider<NutritionViewModel>.value(
+          value: vm,
+          child: Consumer<NutritionViewModel>(
+            builder: (ctx, vm, _) {
+            final isFav = vm.isFavorite(item);
+            return Container(
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceLight,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppRadius.xl),
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // Besin adı + porsiyon
-              Text(
-                item.name,
-                style: AppTextStyles.h1.copyWith(fontSize: 20),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                item.portion,
-                style: AppTextStyles.label.copyWith(fontSize: 13),
-              ),
-              const SizedBox(height: 20),
-
-              // Kalori – büyük vurgu
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 20,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withOpacity(0.07),
-                  borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.local_fire_department_rounded,
-                      color: AppColors.tertiary,
-                      size: 28,
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 36),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tutamaç çizgisi
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.navBar,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${item.calories} kcal',
-                          style: AppTextStyles.h1.copyWith(
-                            fontSize: 26,
-                            color: AppColors.tertiary,
-                          ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Besin adı + yıldız ikonu
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.name,
+                              style: AppTextStyles.h1.copyWith(fontSize: 20),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.portion,
+                              style: AppTextStyles.label.copyWith(fontSize: 13),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'Kalori',
-                          style: AppTextStyles.label,
+                      ),
+                      // Favori yıldız ikonu
+                      IconButton(
+                        icon: Icon(
+                          isFav ? Icons.star_rounded : Icons.star_border_rounded,
+                          color: isFav
+                              ? AppColors.primary
+                              : AppColors.textSecLight,
+                          size: 28,
+                        ),
+                        onPressed: () => vm.toggleFavorite(item),
+                        tooltip: isFav
+                            ? 'Favorilerden çıkar'
+                            : 'Favorilere ekle',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Kalori – büyük vurgu
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 16,
+                      horizontal: 20,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary.withOpacity(0.07),
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.defaultRadius),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.local_fire_department_rounded,
+                          color: AppColors.tertiary,
+                          size: 28,
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${item.calories} kcal',
+                              style: AppTextStyles.h1.copyWith(
+                                fontSize: 26,
+                                color: AppColors.tertiary,
+                              ),
+                            ),
+                            Text(
+                              'Kalori',
+                              style: AppTextStyles.label,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
+                  ),
+                  const SizedBox(height: 20),
 
-              // 2x3 besin değerleri grid'i
-              GridView.count(
-                crossAxisCount: 3,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 1.5,
-                children: [
-                  _buildNutrientTile(
-                    label: 'Karbonhidrat',
-                    value: '${item.carbs.toStringAsFixed(1)}g',
-                    color: AppColors.primary,
-                    icon: Icons.grain,
+                  // 2x3 besin değerleri grid'i – NutrientColors ile tutarlı
+                  GridView.count(
+                    crossAxisCount: 3,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.5,
+                    children: [
+                      _buildNutrientTile(
+                        label: 'Karbonhidrat',
+                        value: '${item.carbs.toStringAsFixed(1)}g',
+                        color: NutrientColors.carbs,
+                        icon: Icons.grain,
+                      ),
+                      _buildNutrientTile(
+                        label: 'Protein',
+                        value: '${item.protein.toStringAsFixed(1)}g',
+                        color: NutrientColors.protein,
+                        icon: Icons.fitness_center,
+                      ),
+                      _buildNutrientTile(
+                        label: 'Yağ',
+                        value: '${item.fat.toStringAsFixed(1)}g',
+                        color: NutrientColors.fat,
+                        icon: Icons.water_drop_outlined,
+                      ),
+                      _buildNutrientTile(
+                        label: 'Şeker',
+                        value: '${item.sugar.toStringAsFixed(1)}g',
+                        color: NutrientColors.sugar,
+                        icon: Icons.icecream_outlined,
+                      ),
+                      _buildNutrientTile(
+                        label: 'Lif',
+                        value: '${item.fiber.toStringAsFixed(1)}g',
+                        color: NutrientColors.fiber,
+                        icon: Icons.eco_outlined,
+                      ),
+                    ],
                   ),
-                  _buildNutrientTile(
-                    label: 'Protein',
-                    value: '${item.protein.toStringAsFixed(1)}g',
-                    color: AppColors.secondary,
-                    icon: Icons.fitness_center,
-                  ),
-                  _buildNutrientTile(
-                    label: 'Yağ',
-                    value: '${item.fat.toStringAsFixed(1)}g',
-                    color: Colors.purple.shade300,
-                    icon: Icons.water_drop_outlined,
-                  ),
-                  _buildNutrientTile(
-                    label: 'Şeker',
-                    value: '${item.sugar.toStringAsFixed(1)}g',
-                    color: AppColors.tertiary,
-                    icon: Icons.icecream_outlined,
-                  ),
-                  _buildNutrientTile(
-                    label: 'Lif',
-                    value: '${item.fiber.toStringAsFixed(1)}g',
-                    color: Colors.green.shade400,
-                    icon: Icons.eco_outlined,
-                  ),
+                  const SizedBox(height: 8),
                 ],
               ),
-              const SizedBox(height: 8),
-            ],
-          ),
+            );
+          },
+        ),
         );
       },
     );
@@ -389,10 +434,10 @@ class MealCard extends StatelessWidget {
   }
 
   Color _getMealColor(String type) {
-    if (type == 'Kahvaltı') return AppColors.primary;
-    if (type == 'Öğle Yemeği') return AppColors.tertiary;
-    if (type == 'Akşam Yemeği') return AppColors.secondary;
-    return AppColors.secondary;
+    if (type == 'Kahvaltı') return AppColors.primary; // Sarı
+    if (type == 'Öğle Yemeği') return AppColors.tertiary; // Turuncu
+    if (type == 'Akşam Yemeği') return AppColors.secondary; // Teal
+    return Colors.purple.shade400; // Ara Öğünler → Mor
   }
 
   IconData _getMealIcon(String type) {

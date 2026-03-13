@@ -5,6 +5,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../widgets/profile/profile_header.dart';
+import '../widgets/profile/profile_personal_info_card.dart';
+import '../widgets/profile/profile_physical_measurements_card.dart';
+import '../widgets/profile/profile_health_info_card.dart';
+import '../widgets/profile/profile_diabetes_profile_card.dart';
+import '../widgets/profile/profile_treatment_tracking_card.dart';
+import '../widgets/profile/profile_goals_lifestyle_card.dart';
+
+import '../widgets/profile/profile_emergency_contact_card.dart';
+import '../widgets/profile/profile_save_button.dart';
+import 'profile_settings_screen.dart';
 
 // Acil durum kişisi için model sınıfı
 class EmergencyContact {
@@ -32,24 +43,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String? _gender;
   DateTime? _dob;
+  final _ageCtrl = TextEditingController();
 
   final _heightCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
   final _chronicCtrl = TextEditingController();
   final _allergyCtrl = TextEditingController();
+  
+  // New Onboarding Fields
+  String? _diabetesType;
+  final _diagnosisYearCtrl = TextEditingController();
+  bool _usesInsulin = false;
+  String? _insulinType;
+  String? _insulinDeliveryMethod;
+  bool _usesCgm = false;
+  String? _glucoseMeasurementFrequency;
+  final _targetMinCtrl = TextEditingController();
+  final _targetMaxCtrl = TextEditingController();
+  final _weeklyExerciseCtrl = TextEditingController();
+  final _sleepHoursCtrl = TextEditingController();
+  List<String> _improvementGoals = [];
+  bool _hasSevereHypoHistory = false;
+  bool _reminderMedication = false;
+  bool _reminderMeasurement = false;
+  bool _reminderWater = false;
 
   List<EmergencyContact> _emergencyContacts = [];
 
   static const double _cardRadius = 16;
-
-  // ✅ Daha kompakt aralıklar
-  static const double _gapXs = 4;
-  static const double _gapSm = 8;
-  static const double _gapMd = 10;
-  static const double _sectionTop = 10;
-  static const double _sectionBottom = 4;
-  static const double _cardPadding = 12;
-  static const double _cardMarginBottom = 8;
 
   bool _isLoading = true;
   String? _errorText;
@@ -67,10 +88,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
+    _ageCtrl.dispose();
     _heightCtrl.dispose();
     _weightCtrl.dispose();
     _chronicCtrl.dispose();
     _allergyCtrl.dispose();
+    _diagnosisYearCtrl.dispose();
+    _targetMinCtrl.dispose();
+    _targetMaxCtrl.dispose();
+    _weeklyExerciseCtrl.dispose();
+    _sleepHoursCtrl.dispose();
     for (var contact in _emergencyContacts) {
       contact.nameController.dispose();
       contact.phoneController.dispose();
@@ -123,6 +150,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _nameCtrl.text = (data['fullName'] ?? '').toString();
       _emailCtrl.text = (data['email'] ?? _emailCtrl.text).toString();
       _gender = (data['gender'] as String?) ?? _gender;
+      
+      if (data['age'] != null) {
+        _ageCtrl.text = data['age'].toString();
+      }
 
       final bd = data['birthDate'];
       if (bd is Timestamp) _dob = bd.toDate();
@@ -134,6 +165,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       _chronicCtrl.text = (data['chronicDiseases'] ?? '').toString();
       _allergyCtrl.text = (data['allergies'] ?? '').toString();
+
+      // Load Onboarding Fields
+      _diabetesType = data['diabetesType'] as String?;
+      if (data['diagnosisYear'] != null) {
+        _diagnosisYearCtrl.text = data['diagnosisYear'].toString();
+      }
+      _usesInsulin = data['usesInsulin'] as bool? ?? false;
+      _insulinType = data['insulinType'] as String?;
+      _insulinDeliveryMethod = data['insulinDeliveryMethod'] as String?;
+      _usesCgm = data['usesCgm'] as bool? ?? false;
+      _glucoseMeasurementFrequency = data['glucoseMeasurementFrequency'] as String?;
+      
+      if (data['targetGlucoseMin'] != null) {
+        _targetMinCtrl.text = data['targetGlucoseMin'].toString();
+      }
+      if (data['targetGlucoseMax'] != null) {
+        _targetMaxCtrl.text = data['targetGlucoseMax'].toString();
+      }
+      if (data['weeklyExerciseDays'] != null) {
+        _weeklyExerciseCtrl.text = data['weeklyExerciseDays'].toString();
+      }
+      if (data['sleepHoursPerNight'] != null) {
+        _sleepHoursCtrl.text = data['sleepHoursPerNight'].toString();
+      }
+      
+      if (data['improvementGoals'] is List) {
+        _improvementGoals = List<String>.from(data['improvementGoals']);
+      }
+      
+      _hasSevereHypoHistory = data['hasSevereHypoglycemiaHistory'] as bool? ?? false;
+      _reminderMedication = data['reminderMedication'] as bool? ?? false;
+      _reminderMeasurement = data['reminderMeasurement'] as bool? ?? false;
+      _reminderWater = data['reminderWater'] as bool? ?? false;
 
       final ec = data['emergencyContacts'];
       if (ec is List) {
@@ -224,12 +288,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'fullName': _nameCtrl.text.trim(),
         'email': _emailCtrl.text.trim(),
         'gender': _gender,
+        'age': int.tryParse(_ageCtrl.text.trim()),
         'birthDate': _dob == null ? null : Timestamp.fromDate(_dob!),
         'height': height,
         'weight': weight,
         'chronicDiseases': _chronicCtrl.text.trim(),
         'allergies': _allergyCtrl.text.trim(),
         'emergencyContacts': ecList,
+
+        // Save Onboarding Fields
+        'diabetesType': _diabetesType,
+        'diagnosisYear': int.tryParse(_diagnosisYearCtrl.text.trim()),
+        'usesInsulin': _usesInsulin,
+        'insulinType': _insulinType,
+        'insulinDeliveryMethod': _insulinDeliveryMethod,
+        'usesCgm': _usesCgm,
+        'glucoseMeasurementFrequency': _glucoseMeasurementFrequency,
+        'targetGlucoseMin': int.tryParse(_targetMinCtrl.text.trim()),
+        'targetGlucoseMax': int.tryParse(_targetMaxCtrl.text.trim()),
+        'weeklyExerciseDays': int.tryParse(_weeklyExerciseCtrl.text.trim()),
+        'sleepHoursPerNight': double.tryParse(_sleepHoursCtrl.text.trim().replaceAll(',', '.')),
+        'improvementGoals': _improvementGoals,
+        'hasSevereHypoglycemiaHistory': _hasSevereHypoHistory,
+        'reminderMedication': _reminderMedication,
+        'reminderMeasurement': _reminderMeasurement,
+        'reminderWater': _reminderWater,
+
         'profileComplete': true,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
@@ -270,16 +354,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         centerTitle: true,
         actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _save,
-            child: Text(
-              'KAYDET',
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.accentTeal,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          )
+          IconButton(
+            icon: const Icon(Icons.settings, color: AppColors.secondary),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProfileSettingsScreen(
+                    initialHasSevereHypoHistory: _hasSevereHypoHistory,
+                    initialReminderMedication: _reminderMedication,
+                    initialReminderMeasurement: _reminderMeasurement,
+                    initialReminderWater: _reminderWater,
+                  ),
+                ),
+              );
+
+              if (result != null && result is Map<String, bool>) {
+                setState(() {
+                  _hasSevereHypoHistory = result['hasSevereHypoHistory'] ?? _hasSevereHypoHistory;
+                  _reminderMedication = result['reminderMedication'] ?? _reminderMedication;
+                  _reminderMeasurement = result['reminderMeasurement'] ?? _reminderMeasurement;
+                  _reminderWater = result['reminderWater'] ?? _reminderWater;
+                });
+              }
+            },
+          ),
         ],
       ),
       body: Stack(
@@ -287,11 +386,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Form(
             key: _formKey,
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16), // ✅ daha kompakt
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24), // ✅ Breathable padding
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _profileHeader(headerName, headerMail),
+                  ProfileHeader(
+                    name: _nameCtrl.text.trim(),
+                    email: _emailCtrl.text.trim(),
+                  ),
 
                   if (_errorText != null) ...[
                     Container(
@@ -299,10 +401,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.all(12),
                       margin: const EdgeInsets.only(bottom: 10),
                       decoration: BoxDecoration(
-                        color: AppColors.tertiary.withValues(alpha: 0.08),
+                        color: AppColors.tertiary.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.tertiary.withValues(alpha: 0.35),
+                          color: AppColors.tertiary.withOpacity(0.35),
                         ),
                       ),
                       child: Text(
@@ -312,141 +414,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
 
-                  _section('Kişisel Bilgiler'),
-                  _accentCard(
-                    accent: AppColors.accentTeal,
-                    child: Column(
-                      children: [
-                        _field('Ad Soyad', _nameCtrl, suffixIcon: Icons.person),
-                        const SizedBox(height: _gapSm),
-                        _field(
-                          'E-posta',
-                          _emailCtrl,
-                          keyboard: TextInputType.emailAddress,
-                          suffixIcon: Icons.email,
-                          readOnly: true,
-                        ),
-                        const SizedBox(height: _gapSm),
-                        Row(
-                          children: [
-                            Expanded(child: _genderField()),
-                            const SizedBox(width: 12),
-                            Expanded(child: _dobField()),
-                          ],
-                        ),
-                      ],
-                    ),
+                  ProfilePersonalInfoCard(
+                    nameController: _nameCtrl,
+                    emailController: _emailCtrl,
+                    ageController: _ageCtrl,
+                    gender: _gender,
+                    dob: _dob,
+                    onPickDob: _pickDob,
+                    onGenderChanged: (v) => setState(() => _gender = v),
                   ),
 
-                  _section('Fiziksel Ölçümler'),
-                  _accentCard(
-                    accent: AppColors.primary,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _field(
-                            'Boy (cm)',
-                            _heightCtrl,
-                            hintText: 'Örn: 182',
-                            keyboard: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _field(
-                            'Kilo (kg)',
-                            _weightCtrl,
-                            hintText: 'Örn: 78',
-                            keyboard: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                  ProfilePhysicalMeasurementsCard(
+                    heightController: _heightCtrl,
+                    weightController: _weightCtrl,
                   ),
 
-                  _section('Sağlık Bilgileri'),
-                  _accentCard(
-                    accent: AppColors.primary,
-                    child: Column(
-                      children: [
-                        _field('Kronik Hastalıklar', _chronicCtrl,
-                            hintText: 'Örn: Tip 2 Diyabet'),
-                        const SizedBox(height: _gapSm),
-                        _field('Alerjiler', _allergyCtrl, hintText: 'Örn: Penisilin'),
-                      ],
-                    ),
+                  ProfileHealthInfoCard(
+                    chronicCtrl: _chronicCtrl,
+                    allergyCtrl: _allergyCtrl,
                   ),
 
-                  _section('Acil Durum Bilgisi', danger: true),
-                  _accentCard(
-                    accent: AppColors.tertiary,
-                    child: Column(
-                      children: [
-                        ...List.generate(_emergencyContacts.length, (index) {
-                          final contact = _emergencyContacts[index];
-                          return Column(
-                            children: [
-                              if (index > 0) const SizedBox(height: _gapSm),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: _field(
-                                      'Ad Soyad',
-                                      contact.nameController,
-                                      hintText: 'Örn: Ayşe Yılmaz',
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _field(
-                                      'Telefon',
-                                      contact.phoneController,
-                                      keyboard: TextInputType.phone,
-                                      hintText: 'Örn: +90 555 123 45 67',
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.delete_outline,
-                                      color: AppColors.tertiary,
-                                      size: 24,
-                                    ),
-                                    onPressed: () => _removeEmergencyContact(index),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          );
-                        }),
-                        const SizedBox(height: _gapSm),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _isLoading ? null : _addEmergencyContact,
-                            icon: const Icon(Icons.add, size: 20),
-                            label: const Text('Kişi Ekle'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.tertiary,
-                              side: BorderSide(color: AppColors.tertiary),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  ProfileDiabetesProfileCard(
+                    diabetesType: _diabetesType,
+                    diagnosisYearCtrl: _diagnosisYearCtrl,
+                    onDiabetesTypeChanged: (v) => setState(() => _diabetesType = v),
+                  ),
+
+                  ProfileTreatmentTrackingCard(
+                    usesInsulin: _usesInsulin,
+                    insulinType: _insulinType,
+                    insulinDeliveryMethod: _insulinDeliveryMethod,
+                    usesCgm: _usesCgm,
+                    glucoseMeasurementFrequency: _glucoseMeasurementFrequency,
+                    onUsesInsulinChanged: (v) => setState(() => _usesInsulin = v),
+                    onInsulinTypeChanged: (v) => setState(() => _insulinType = v),
+                    onInsulinMethodChanged: (v) => setState(() => _insulinDeliveryMethod = v),
+                    onUsesCgmChanged: (v) => setState(() => _usesCgm = v),
+                    onFrequencyChanged: (v) => setState(() => _glucoseMeasurementFrequency = v),
+                  ),
+
+                  ProfileGoalsLifestyleCard(
+                    targetMinCtrl: _targetMinCtrl,
+                    targetMaxCtrl: _targetMaxCtrl,
+                    weeklyExerciseCtrl: _weeklyExerciseCtrl,
+                    sleepHoursCtrl: _sleepHoursCtrl,
+                    improvementGoals: _improvementGoals,
+                    onGoalsChanged: (v) => setState(() => _improvementGoals = v),
+                  ),
+
+                  ProfileEmergencyContactCard(
+                    emergencyContacts: _emergencyContacts,
+                    onAddContact: _addEmergencyContact,
+                    onRemoveContact: _removeEmergencyContact,
+                    isLoading: _isLoading,
                   ),
                 ],
               ),
@@ -454,234 +474,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           if (_isLoading)
             Container(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               child: const Center(child: CircularProgressIndicator()),
             ),
         ],
       ),
-    );
-  }
-
-  // ================= UI =================
-
-  Widget _profileHeader(String headerName, String headerMail) {
-    return Column(
-      children: [
-        Center(
-          child: Stack(
-            children: [
-              CircleAvatar(
-                radius: 48, // ✅ 52 → 48 daha kompakt
-                backgroundColor: AppColors.surfaceLight,
-                child: Icon(Icons.person, size: 48, color: AppColors.secondary),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: CircleAvatar(
-                  radius: 16, // ✅ 18 → 16
-                  backgroundColor: AppColors.primary,
-                  child: const Icon(Icons.camera_alt, size: 16, color: AppColors.secondary),
-                ),
-              ),
-            ],
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: ProfileSaveButton(
+            onPressed: _save,
+            isLoading: _isLoading,
           ),
-        ),
-        const SizedBox(height: _gapSm),
-        Text(
-          headerName,
-          style: AppTextStyles.h1.copyWith(fontSize: 19),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          headerMail,
-          style: AppTextStyles.body.copyWith(color: AppColors.textSecLight),
-        ),
-        const SizedBox(height: _gapMd), // ✅
-      ],
-    );
-  }
-
-  Widget _section(String title, {bool danger = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(top: _sectionTop, bottom: _sectionBottom),
-      child: Text(
-        title.toUpperCase(),
-        style: AppTextStyles.body.copyWith(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
-          color: danger ? AppColors.tertiary : AppColors.accentTeal,
         ),
       ),
     );
   }
 
-  Widget _field(
-    String label,
-    TextEditingController c, {
-    TextInputType keyboard = TextInputType.text,
-    String? hintText,
-    IconData? suffixIcon,
-    bool readOnly = false,
-    List<TextInputFormatter>? inputFormatters,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLabel(label),
-        TextFormField(
-          controller: c,
-          keyboardType: keyboard,
-          inputFormatters: inputFormatters,
-          readOnly: readOnly,
-          style: AppTextStyles.body,
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
-            filled: true,
-            fillColor: AppColors.backgroundLight,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.accentTeal, width: 1.5),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // ✅
-            suffixIcon: suffixIcon != null
-                ? Icon(suffixIcon, color: AppColors.accentTeal, size: 22)
-                : null,
-          ),
-          validator: (v) {
-            if (label == 'Ad Soyad' && (v == null || v.trim().isEmpty)) {
-              return 'Ad Soyad boş olamaz';
-            }
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4), // ✅ 6 → 4
-      child: Text(
-        text,
-        style: AppTextStyles.body.copyWith(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: AppColors.accentTeal,
-        ),
-      ),
-    );
-  }
-
-  Widget _genderField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLabel('Cinsiyet'),
-        DropdownButtonFormField<String>(
-          value: _gender,
-          isExpanded: true,
-          decoration: InputDecoration(
-            hintText: 'Cinsiyet Seçiniz',
-            hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
-            filled: true,
-            fillColor: AppColors.backgroundLight,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(12)),
-              borderSide: BorderSide(color: AppColors.accentTeal, width: 1.5),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // ✅
-            suffixIcon: Icon(Icons.arrow_drop_down, color: AppColors.accentTeal, size: 22),
-          ),
-          items: const [
-            DropdownMenuItem(value: 'Erkek', child: Text('Erkek')),
-            DropdownMenuItem(value: 'Kadın', child: Text('Kadın')),
-            DropdownMenuItem(value: 'Belirtmek İstemiyorum', child: Text('Belirtmek İstemiyorum')),
-          ],
-          onChanged: (v) => setState(() => _gender = v),
-        ),
-      ],
-    );
-  }
-
-  Widget _dobField() {
-    final text = _dob == null ? '' : _formatDate(_dob);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLabel('Doğum Tarihi'),
-        InkWell(
-          onTap: _isLoading ? null : _pickDob,
-          child: InputDecorator(
-            decoration: InputDecoration(
-              hintText: 'Örn: 15/05/1990',
-              hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
-              filled: true,
-              fillColor: AppColors.backgroundLight,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: const OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12)),
-                borderSide: BorderSide(color: AppColors.accentTeal, width: 1.5),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // ✅
-              suffixIcon: Icon(Icons.calendar_today, color: AppColors.accentTeal, size: 22),
-            ),
-            child: Text(
-              text.isEmpty ? 'Tarih seçiniz' : text,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.body.copyWith(
-                color: text.isEmpty ? Colors.grey : AppColors.secondary,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _accentCard({required Color accent, required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.all(_cardPadding), // ✅ 16 → 14
-      margin: const EdgeInsets.only(bottom: _cardMarginBottom), // ✅ 12 → 10
-      decoration: BoxDecoration(
-        color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(_cardRadius),
-        border: Border(left: BorderSide(color: accent, width: 5)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
 }

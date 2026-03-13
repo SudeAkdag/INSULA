@@ -95,14 +95,48 @@ class _NutritionScreenContent extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         _buildDateSelector(context, vm),
+
         const SizedBox(height: 24),
-        Text(
-          'Günlük Özet',
-          style: AppTextStyles.h1.copyWith(fontSize: 28),
-        ),
-        Text(
-          'Karbonhidrat takibini buradan yapabilirsin.',
-          style: AppTextStyles.label.copyWith(fontSize: 14),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Günlük Özet',
+                    style: AppTextStyles.h1.copyWith(fontSize: 28),
+                  ),
+                  Text(
+                    'Karbonhidrat takibini buradan yapabilirsin.',
+                    style: AppTextStyles.label.copyWith(fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+            if (_shouldShowBackToToday(vm.selectedDate))
+              OutlinedButton.icon(
+                onPressed: () => vm.changeDate(DateTime.now()),
+                icon: const Icon(Icons.today, size: 25),
+                label: const Text('Bugüne Dön'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.secondary,
+                  side: const BorderSide(color: AppColors.secondary, width: 1),
+                  shape: const StadiumBorder(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  minimumSize: Size.zero,
+                  textStyle: AppTextStyles.label.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 24),
         NutritionSummaryCard(
@@ -154,15 +188,23 @@ class _NutritionScreenContent extends StatelessWidget {
     );
   }
 
+  /// Seçili tarih bugünden 2+ gün uzaksa true döner.
+  bool _shouldShowBackToToday(DateTime selected) {
+    final today = DateTime.now();
+    final diff = selected
+        .difference(DateTime(today.year, today.month, today.day))
+        .inDays
+        .abs();
+    return diff >= 2;
+  }
+
   /// Dinamik tarih seçici widget'ı.
-  /// Önceki gün | Bugün | Sonraki gün + takvim butonu
   Widget _buildDateSelector(BuildContext context, NutritionViewModel vm) {
     final DateTime selected = vm.selectedDate;
     final DateTime today = DateTime.now();
     final DateTime yesterday = today.subtract(const Duration(days: 1));
     final DateTime tomorrow = today.add(const Duration(days: 1));
 
-    // Gün etiketi üretir
     String _label(DateTime date) {
       if (_isSameDay(date, today)) return 'Bugün';
       if (_isSameDay(date, yesterday)) return 'Dün';
@@ -170,16 +212,55 @@ class _NutritionScreenContent extends StatelessWidget {
       return _formatShort(date);
     }
 
-    // Gösterilecek üç günlük liste
     final List<DateTime> days = [
       selected.subtract(const Duration(days: 1)),
       selected,
       selected.add(const Duration(days: 1)),
     ];
 
+    // Takvim ikonu butonu
+    final Widget calendarIcon = InkWell(
+      onTap: () async {
+        final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: selected,
+          firstDate: DateTime(2020),
+          lastDate: DateTime(2030),
+          locale: const Locale('tr', 'TR'),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: AppColors.secondary,
+                  onPrimary: Colors.white,
+                  surface: AppColors.surfaceLight,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+        if (picked != null) {
+          vm.changeDate(picked);
+        }
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Icon(
+          Icons.calendar_month_outlined,
+          color: AppColors.secondary,
+          size: 20,
+        ),
+      ),
+    );
+
     return Row(
       children: [
-        // Önceki / seçili / sonraki gün butonları
         ...days.map((date) {
           final bool isSelected = _isSameDay(date, selected);
           return Expanded(
@@ -215,48 +296,10 @@ class _NutritionScreenContent extends StatelessWidget {
             ),
           );
         }),
-        // Takvim ikonu butonu
+        // Takvim ikonu (sağ köşe)
         Padding(
           padding: const EdgeInsets.only(left: 4),
-          child: InkWell(
-            onTap: () async {
-              final DateTime? picked = await showDatePicker(
-                context: context,
-                initialDate: selected,
-                firstDate: DateTime(2020),
-                lastDate: DateTime(2030),
-                locale: const Locale('tr', 'TR'),
-                builder: (context, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: const ColorScheme.light(
-                        primary: AppColors.secondary,
-                        onPrimary: Colors.white,
-                        surface: AppColors.surfaceLight,
-                      ),
-                    ),
-                    child: child!,
-                  );
-                },
-              );
-              if (picked != null) {
-                vm.changeDate(picked);
-              }
-            },
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceLight,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.calendar_month_outlined,
-                color: AppColors.secondary,
-                size: 20,
-              ),
-            ),
-          ),
+          child: calendarIcon,
         ),
       ],
     );
@@ -371,10 +414,10 @@ class _NutritionScreenContent extends StatelessWidget {
   }
 
   Color _getMealColor(String type) {
-    if (type == 'Kahvaltı') return AppColors.primary;
-    if (type == 'Öğle Yemeği') return AppColors.tertiary;
-    if (type == 'Akşam Yemeği') return AppColors.secondary;
-    return AppColors.secondary;
+    if (type == 'Kahvaltı') return AppColors.primary; // Sarı
+    if (type == 'Öğle Yemeği') return AppColors.tertiary; // Turuncu
+    if (type == 'Akşam Yemeği') return AppColors.secondary; // Teal
+    return Colors.purple.shade400; // Ara Öğünler → Mor
   }
 
   IconData _getMealIcon(String type) {

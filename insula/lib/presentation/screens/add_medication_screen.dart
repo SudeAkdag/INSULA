@@ -197,30 +197,25 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
           icon: const Icon(Icons.arrow_back, color: AppColors.secondary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          widget.medication != null ? "İlaç Düzenle" : "İlaç Ekle",
-          style: AppTextStyles.h1.copyWith(color: AppColors.secondary),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.medication, color: AppColors.secondary, size: 24),
+            const SizedBox(width: 8),
+            Text(
+              widget.medication != null ? "İlaç Düzenle" : "İlaç Ekle",
+              style: AppTextStyles.h1.copyWith(color: AppColors.secondary),
+            ),
+          ],
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          TextButton(
-            onPressed: () {},
-            child: Text(
-              'Düzenle',
-              style: AppTextStyles.body.copyWith(
-                color: AppColors.accentTeal,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -283,7 +278,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                 nameValidator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'İlaç adı girin' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 'Kullanım Zamanları',
                 style: AppTextStyles.body.copyWith(
@@ -292,7 +287,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                   color: AppColors.accentTeal,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               ...List.generate(
                 _doseTimes.length,
                 (index) => Column(
@@ -352,13 +347,13 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                         );
                       },
                     ),
-                    if (index < _doseTimes.length - 1) const SizedBox(height: 6),
+                    if (index < _doseTimes.length - 1) const SizedBox(height: 4),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
               AddMedicationNotesCard(controller: _notesController),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
             ],
           ),
         ),

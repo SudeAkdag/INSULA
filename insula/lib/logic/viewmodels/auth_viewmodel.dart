@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:insula/presentation/models/onboarding_data.dart';
 
 class AuthViewModel {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -7,6 +8,8 @@ class AuthViewModel {
 
   // Stream to listen to auth state changes
   Stream<User?> get user => _auth.authStateChanges();
+
+  String? get currentUserId => _auth.currentUser?.uid;
 
   // Sign In
   Future<User?> signIn(String email, String password) async {
@@ -71,6 +74,16 @@ class AuthViewModel {
     }, SetOptions(merge: true));
   }
   
+  /// Onboarding sonunda toplanan tüm veriyi Firestore'a kaydeder.
+  Future<void> saveFullOnboardingProfile({
+    required String uid,
+    required OnboardingData data,
+  }) async {
+    final map = data.toFirestoreMap();
+    map['updatedAt'] = FieldValue.serverTimestamp();
+    await _firestore.collection('users').doc(uid).set(map, SetOptions(merge: true));
+  }
+
   // Check if profile is complete
   Future<bool> isProfileComplete(String uid) async {
     try {

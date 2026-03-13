@@ -32,7 +32,7 @@ class AddMedicationNotesCard extends StatelessWidget {
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(_cardRadius),
@@ -46,7 +46,7 @@ class AddMedicationNotesCard extends StatelessWidget {
           ),
           child: TextField(
             controller: controller,
-            maxLines: 4,
+            maxLines: 3,
             style: AppTextStyles.body,
             decoration: InputDecoration.collapsed(
               hintText: hint,

@@ -2,10 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:insula/core/theme/app_colors.dart';
+import 'package:insula/core/theme/app_constants.dart';
 import 'package:insula/core/theme/app_text_styles.dart';
 import 'package:insula/logic/viewmodels/auth_viewmodel.dart';
-import 'package:insula/presentation/screens/auth/register_screen.dart';
+import 'package:insula/presentation/screens/onboarding/onboarding_flow_screen.dart';
 
+/// Giriş ekranı — tıbbi arayüz stili, erişilebilir tipografi ve geniş dokunma alanları.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -18,11 +20,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _authViewModel = AuthViewModel();
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   void _login() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       await _authViewModel.signIn(
@@ -31,187 +32,161 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
-        // Navigasyon yığını temizle ve AuthWrapper'a (yani main'e) geri dön
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Giriş başarısız: ${e.toString()}')),
+          SnackBar(
+            content: Text('Giriş başarısız: ${e.toString()}'),
+            backgroundColor: AppColors.tertiary,
+          ),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: AppColors.secondary),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Custom Header with Curve
-            Stack(
-              children: [
-                CustomPaint(
-                  size: Size(MediaQuery.of(context).size.width, 300),
-                  painter: HeaderPainter(),
+            const SizedBox(height: AppSpacing.section),
+            Text(
+              'Hoş geldiniz',
+              style: AppTextStyles.h1.copyWith(
+                fontSize: 28,
+                color: AppColors.secondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Hesabınıza giriş yapın',
+              style: AppTextStyles.body.copyWith(
+                color: AppColors.textSecLight,
+                fontSize: 17,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            _InputCard(
+              icon: Icons.email_outlined,
+              child: TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(fontSize: 18),
+                decoration: const InputDecoration(
+                  hintText: 'E-posta',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 18),
                 ),
-                Positioned(
-                  top: 100,
-                  left: 30,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hoşgeldiniz',
-                        style: AppTextStyles.h1.copyWith(
-                          color: AppColors.surfaceLight,
-                          fontSize: 32,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            _InputCard(
+              icon: Icons.lock_outline,
+              child: TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                style: const TextStyle(fontSize: 18),
+                decoration: InputDecoration(
+                  hintText: 'Şifre',
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 18),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: AppColors.textSecLight,
+                    ),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.xxl),
+
+            SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _login,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+                  ),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
                         ),
+                      )
+                    : const Text(
+                        'Giriş Yap',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                       ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Hesabınıza giriş yapın',
-                        style: AppTextStyles.body.copyWith(
-                          color: AppColors.surfaceLight.withOpacity(0.9),
-                        ),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Hesabınız yok mu? ',
+                  style: AppTextStyles.body.copyWith(color: AppColors.textSecLight, fontSize: 16),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const OnboardingFlowScreen(),
                       ),
-                    ],
+                    );
+                  },
+                  child: Text(
+                    'Hadi Başlayalım',
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.secondary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ],
             ),
-
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 40),
-
-                  // Email Field
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceLight,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        hintText: 'E-posta',
-                        prefixIcon: Icon(Icons.email_outlined,
-                            color: AppColors.secondary),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 16),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Password Field
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceLight,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        hintText: 'Şifre',
-                        prefixIcon: Icon(Icons.lock_outline,
-                            color: AppColors.secondary),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 16),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Login Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: AppColors.secondary,
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(
-                              color: AppColors.secondary)
-                          : const Text(
-                              'GİRİŞ YAP',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Register Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Hesabınız yok mu? ',
-                        style: AppTextStyles.body
-                            .copyWith(color: AppColors.textSecLight),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const RegisterScreen()),
-                          );
-                        },
-                        child: Text(
-                          'Kayıt Ol',
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: AppSpacing.xl),
           ],
         ),
       ),
@@ -219,27 +194,34 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class HeaderPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.secondary
-      ..style = PaintingStyle.fill;
+class _InputCard extends StatelessWidget {
+  const _InputCard({required this.icon, required this.child});
 
-    final path = Path();
-    path.lineTo(0, size.height - 50);
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height + 50,
-      size.width,
-      size.height - 50,
+  final IconData icon;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.secondary.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 16),
+          Icon(icon, color: AppColors.secondary, size: 24),
+          const SizedBox(width: 12),
+          Expanded(child: child),
+        ],
+      ),
     );
-    path.lineTo(size.width, 0);
-    path.close();
-
-    canvas.drawPath(path, paint);
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

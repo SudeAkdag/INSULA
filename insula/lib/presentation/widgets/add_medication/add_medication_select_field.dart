@@ -43,7 +43,7 @@ class AddMedicationSelectField extends StatelessWidget {
         InkWell(
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: AppColors.backgroundLight,
               borderRadius: BorderRadius.circular(12),

@@ -40,7 +40,7 @@ class AddMedicationFormCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(_cardRadius),
@@ -70,13 +70,13 @@ class AddMedicationFormCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade300),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               suffixIcon: Icon(Icons.search, color: AppColors.accentTeal, size: 22),
             ),
             style: AppTextStyles.body,
             validator: nameValidator,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           AddMedicationSelectField(
             label: 'İlaç Türü',
             value: medicationType == 'Tür Seçiniz' ? '' : medicationType,
@@ -84,7 +84,7 @@ class AddMedicationFormCard extends StatelessWidget {
             suffixIcon: AddMedicationSelectField.dropdownIcon(),
             onTap: onTypeTap,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Row(
             children: [
               Expanded(
