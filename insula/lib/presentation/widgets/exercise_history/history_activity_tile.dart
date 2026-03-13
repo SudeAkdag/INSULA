@@ -3,34 +3,43 @@ import '../../../../core/theme/app_colors.dart';
 
 class HistoryActivityTile extends StatelessWidget {
   final String title;
+  final IconData icon; // İkon artık dinamik
   final String time;
   final String duration;
   final String calories;
-  final String glucoseChange;
+  final String? glucoseBefore;
+  final String? glucoseAfter;
   final bool isDecrease;
 
   const HistoryActivityTile({
     super.key,
     required this.title,
+    required this.icon,
     required this.time,
     required this.duration,
     required this.calories,
-    required this.glucoseChange,
+    this.glucoseBefore,
+    this.glucoseAfter,
     required this.isDecrease,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Hem başlangıç hem bitiş şekeri varsa tam veri modu aktif olur
+    final bool hasBoth = (glucoseBefore != null && glucoseBefore != "null") && 
+                         (glucoseAfter != null && glucoseAfter != "null");
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.secondary.withValues(alpha: 0.05), 
-            blurRadius: 10
+            color: AppColors.secondary.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           )
         ],
       ),
@@ -39,9 +48,8 @@ class HistoryActivityTile extends StatelessWidget {
           Row(
             children: [
               CircleAvatar(
-                // Koyu mavi tonu (secondary) arka plan için çok açık kullanıldı
                 backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
-                child: const Icon(Icons.directions_walk, color: AppColors.secondary),
+                child: Icon(icon, color: AppColors.secondary), // İkon buradan geliyor
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -49,49 +57,56 @@ class HistoryActivityTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title, 
+                      title,
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold, 
-                        color: AppColors.secondary
-                      )
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.secondary,
+                        fontSize: 16,
+                      ),
                     ),
                     Text(
-                      time, 
+                      time,
                       style: const TextStyle(
-                        fontSize: 10, 
-                        color: AppColors.textSecLight
-                      )
+                        fontSize: 12,
+                        color: AppColors.textSecLight,
+                      ),
                     ),
                   ],
                 ),
               ),
-              // Kan Şekeri Rozeti
+              // Dinamik Kan Şekeri Rozeti
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  // Azalma durumunda koyu mavi (secondary), artışta turuncu (tertiary)
-                  color: isDecrease 
-                      ? AppColors.secondary.withValues(alpha: 0.1) 
-                      : AppColors.tertiary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  color: hasBoth 
+                      ? (isDecrease ? AppColors.secondary.withValues(alpha: 0.08) : AppColors.tertiary.withValues(alpha: 0.08))
+                      : AppColors.secondary.withValues(alpha: 0.05), // Veri eksikken yumuşak mavi
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   children: [
                     Text(
-                      "KAN ŞEKERİ", 
+                      "KAN ŞEKERİ",
                       style: TextStyle(
-                        fontSize: 7, 
-                        fontWeight: FontWeight.bold, 
-                        color: isDecrease ? AppColors.secondary : AppColors.tertiary
-                      )
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                        color: hasBoth 
+                            ? (isDecrease ? AppColors.secondary : AppColors.tertiary)
+                            : AppColors.secondary,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                     Text(
-                      glucoseChange, 
+                      hasBoth 
+                          ? "$glucoseBefore ➔ $glucoseAfter"
+                          : "${glucoseBefore ?? '...'} - ${glucoseAfter ?? '...'}",
                       style: TextStyle(
-                        fontSize: 11, 
-                        fontWeight: FontWeight.bold, 
-                        color: isDecrease ? AppColors.secondary : AppColors.tertiary
-                      )
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: hasBoth 
+                            ? (isDecrease ? AppColors.secondary : AppColors.tertiary)
+                            : AppColors.secondary,
+                      ),
                     ),
                   ],
                 ),
@@ -99,28 +114,18 @@ class HistoryActivityTile extends StatelessWidget {
             ],
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: Divider(
-              height: 1, 
-              color: AppColors.backgroundLight 
+              height: 1,
+              color: AppColors.backgroundLight.withValues(alpha: 0.5),
             ),
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _infoItem(Icons.timer_outlined, duration),
+              Container(height: 15, width: 1, color: AppColors.backgroundLight),
               _infoItem(Icons.local_fire_department_outlined, calories),
-              TextButton(
-                onPressed: () {},
-                child: const Text(
-                  "DETAYLAR >", 
-                  style: TextStyle(
-                    fontSize: 11, 
-                    fontWeight: FontWeight.bold, 
-                    color: AppColors.secondary // Buton rengi koyu mavi yapıldı
-                  )
-                ),
-              ),
             ],
           ),
         ],
@@ -130,16 +135,17 @@ class HistoryActivityTile extends StatelessWidget {
 
   Widget _infoItem(IconData icon, String label) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: AppColors.textSecLight), 
-        const SizedBox(width: 4),
+        Icon(icon, size: 18, color: AppColors.primary),
+        const SizedBox(width: 6),
         Text(
-          label, 
+          label,
           style: const TextStyle(
-            fontSize: 12, 
-            color: AppColors.secondary, 
-            fontWeight: FontWeight.w500
-          )
+            fontSize: 14,
+            color: AppColors.secondary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
