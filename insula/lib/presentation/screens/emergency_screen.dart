@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_is_not_empty, deprecated_member_use, use_build_context_synchronously
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -324,6 +326,7 @@ class EmergencyScreen extends StatelessWidget {
                 final current = (raw is List)
                     ? raw.whereType<Map<String, dynamic>>().toList()
                     : <Map<String, dynamic>>[];
+                // ignore: duplicate_ignore
                 // ignore: use_build_context_synchronously
                 await _addContact(context, user.uid, current);
               },

@@ -3,6 +3,7 @@ class GlucoseReading {
   final int value;
   final String unit;
   final String status;
+  final String context; // Açlık, Yemek öncesi, Yemek sonrası, Egzersiz öncesi, Egzersiz sonrası, Genel
   final DateTime timestamp;
 
   GlucoseReading({
@@ -10,6 +11,7 @@ class GlucoseReading {
     required this.value,
     this.unit = "mg/dL",
     required this.status,
+    this.context = 'Genel',
     required this.timestamp,
   });
 
