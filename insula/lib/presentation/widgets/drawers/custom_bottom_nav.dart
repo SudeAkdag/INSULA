@@ -13,27 +13,27 @@ class CustomBottomNav extends StatelessWidget {
   });
 
   static const List<IconData> _icons = [
-    Icons.medication_outlined,
-    Icons.home_outlined,
-    Icons.restaurant_menu_outlined,
-    Icons.fitness_center_outlined,
-    Icons.person_outline,
+    Icons.medication_outlined,       // 0 – İlaç
+    Icons.restaurant_menu_outlined,  // 1 – Beslenme
+    Icons.home_outlined,             // 2 – Ana Sayfa (ORTADA)
+    Icons.fitness_center_outlined,   // 3 – Egzersiz
+    Icons.person_outline,            // 4 – Profil
   ];
 
   static const List<IconData> _activeIcons = [
-    Icons.medication,
-    Icons.home,
-    Icons.restaurant_menu,
-    Icons.fitness_center,
-    Icons.person,
+    Icons.medication,       // 0 – İlaç
+    Icons.restaurant_menu,  // 1 – Beslenme
+    Icons.home,             // 2 – Ana Sayfa (ORTADA)
+    Icons.fitness_center,   // 3 – Egzersiz
+    Icons.person,           // 4 – Profil
   ];
 
   static const List<String> _labels = [
-    'İlaç',
-    'Ana Sayfa',
-    'Beslenme',
-    'Egzersiz',
-    'Profil',
+    'İlaç',       // 0
+    'Beslenme',   // 1
+    'Ana Sayfa',  // 2
+    'Egzersiz',   // 3
+    'Profil',     // 4
   ];
 
   @override

@@ -11,18 +11,23 @@ import '../../../core/theme/app_text_styles.dart';
 class GlucoseSummaryCard extends StatelessWidget {
   const GlucoseSummaryCard({super.key});
 
+  /// Returns the foreground color for a given glucose status string.
+  Color _statusColor(String status) {
+    if (status == 'Düşük') return Colors.orange.shade700;
+    if (status == 'Yüksek') return Colors.red.shade700;
+    return Colors.green.shade700;
+  }
+
   Widget _buildStatusBadge(String status) {
-    Color bgColor;
-    Color fgColor;
+    final fgColor = _statusColor(status);
+    final bgColor = fgColor.withOpacity(0.1);
+    IconData icon;
     if (status == 'Düşük') {
-      bgColor = Colors.orange.withOpacity(0.1);
-      fgColor = Colors.orange.shade700;
+      icon = Icons.trending_down;
     } else if (status == 'Yüksek') {
-      bgColor = Colors.red.withOpacity(0.1);
-      fgColor = Colors.red.shade700;
+      icon = Icons.trending_up;
     } else {
-      bgColor = Colors.green.withOpacity(0.1);
-      fgColor = Colors.green.shade700;
+      icon = Icons.check_circle;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -34,11 +39,7 @@ class GlucoseSummaryCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            status == 'Yüksek' ? Icons.trending_up : Icons.check_circle,
-            color: fgColor,
-            size: 16,
-          ),
+          Icon(icon, color: fgColor, size: 16),
           const SizedBox(width: 4),
           Text(
             status,
@@ -67,7 +68,7 @@ class GlucoseSummaryCard extends StatelessWidget {
         final glucose = vm.latestGlucose;
         final status = glucose != null ? vm.glucoseStatus(glucose.value) : null;
         const displayMin = 40;
-        const displayMax = 300;
+        const displayMax = 200;
         final value = glucose?.value ?? 100;
         final position =
             ((value - displayMin) / (displayMax - displayMin)).clamp(0.0, 1.0);
@@ -127,14 +128,18 @@ class GlucoseSummaryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Value
+                  // Value – inherits status colour when out of range
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
                         glucose?.value.toString() ?? "—",
-                        style: AppTextStyles.glucoseValue,
+                        style: AppTextStyles.glucoseValue.copyWith(
+                          color: status != null
+                              ? _statusColor(status)
+                              : AppTextStyles.glucoseValue.color,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -149,7 +154,7 @@ class GlucoseSummaryCard extends StatelessWidget {
 
                   const SizedBox(height: 32),
 
-                  // Gradient Range Bar
+                  // Gradient Range Bar – orijinal renkler, ok göstergesi
                   Column(
                     children: [
                       Row(
@@ -170,67 +175,59 @@ class GlucoseSummaryCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      SizedBox(
-                        height: 12,
-                        child: Stack(
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(6),
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    AppColors.tertiary, // Orange
-                                    AppColors.primary, // Yellow
-                                    AppColors.secondary, // Teal (Target)
-                                    AppColors.primary,
-                                    AppColors.tertiary,
-                                  ],
-                                  stops: [0.0, 0.3, 0.5, 0.7, 1.0],
-                                ),
-                                color: Colors.grey.shade200, // Fallback
-                              ),
-                              child: Opacity(
-                                opacity: 0.8,
-                                child: Container(),
-                              ),
-                            ),
-                            // Indicator
-                            LayoutBuilder(
-                              builder: (context, constraints) {
-                                final left =
-                                    ((constraints.maxWidth - 6) * position)
-                                        .clamp(0.0, constraints.maxWidth - 6);
-                                return Positioned(
-                                  left: left,
-                                  top: 0,
-                                  bottom: 0,
-                                  child: Transform.translate(
-                                    offset: const Offset(
-                                        -3, 0), // Center the marker width (6px)
-                                    child: Container(
-                                      width: 6,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(3),
-                                        border: Border.all(
-                                            color: Colors.grey.shade300),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                Colors.black.withOpacity(0.2),
-                                            blurRadius: 2,
-                                            offset: const Offset(0, 1),
-                                          )
-                                        ],
+                      // Ok göstergesi + çubuk
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          const arrowSize = 12.0;
+                          const barHeight = 12.0;
+                          final arrowLeft =
+                              ((constraints.maxWidth - arrowSize) * position)
+                                  .clamp(0.0, constraints.maxWidth - arrowSize);
+                          final arrowColor = status != null
+                              ? _statusColor(status)
+                              : AppColors.secondary;
+
+                          return Column(
+                            children: [
+                              // Ok işareti satırı
+                              SizedBox(
+                                height: arrowSize,
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    if (glucose != null)
+                                      Positioned(
+                                        left: arrowLeft,
+                                        child: CustomPaint(
+                                          size: const Size(arrowSize, arrowSize),
+                                          painter:
+                                              _DownArrowPainter(color: arrowColor),
+                                        ),
                                       ),
-                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              // Gradient çubuk
+                              Container(
+                                height: barHeight,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(6),
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      AppColors.tertiary, // Orange
+                                      AppColors.primary,  // Yellow
+                                      AppColors.secondary, // Teal (Target)
+                                      AppColors.primary,
+                                      AppColors.tertiary,
+                                    ],
+                                    stops: [0.0, 0.3, 0.5, 0.7, 1.0],
                                   ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -309,4 +306,28 @@ class GlucoseSummaryCard extends StatelessWidget {
       },
     );
   }
+}
+
+/// Aşağı bakan dolu üçgen (ok) çizen CustomPainter.
+class _DownArrowPainter extends CustomPainter {
+  final Color color;
+  const _DownArrowPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_DownArrowPainter old) => old.color != color;
 }

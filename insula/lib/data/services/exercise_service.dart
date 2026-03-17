@@ -71,55 +71,45 @@ class ExerciseService {
 }
   // 4. Aylık İstatistikleri ve Karşılaştırmayı Hesaplama
   Future<Map<String, dynamic>> getMonthlyComparison() async {
-    final String? uid = _auth.currentUser?.uid;
-    if (uid == null) return {'count': 0, 'calories': 0, 'avgDrop': 0, 'difference': 0.0};
+  final String? uid = _auth.currentUser?.uid;
+  if (uid == null) return {'count': 0, 'calories': 0, 'difference': 0.0};
 
-    final now = DateTime.now();
-    final startOfThisMonth = DateTime(now.year, now.month, 1);
-    final startOfLastMonth = DateTime(now.year, now.month - 1, 1);
-    final endOfLastMonth = DateTime(now.year, now.month, 0);
+  final now = DateTime.now();
+  final startOfThisMonth = DateTime(now.year, now.month, 1);
+  final startOfLastMonth = DateTime(now.year, now.month - 1, 1);
+  final endOfLastMonth = DateTime(now.year, now.month, 1).subtract(const Duration(seconds: 1));
 
-    // Verileri çek
-    final thisMonthSnap = await _firestore.collection('users').doc(uid).collection('exercises')
-        .where('date', isGreaterThanOrEqualTo: startOfThisMonth.toIso8601String()).get();
+  // Sorgular
+  final thisMonthSnap = await _firestore.collection('users').doc(uid).collection('exercises')
+      .where('date', isGreaterThanOrEqualTo: startOfThisMonth.toIso8601String()).get();
 
-    final lastMonthSnap = await _firestore.collection('users').doc(uid).collection('exercises')
-        .where('date', isGreaterThanOrEqualTo: startOfLastMonth.toIso8601String())
-        .where('date', isLessThanOrEqualTo: endOfLastMonth.toIso8601String()).get();
+  final lastMonthSnap = await _firestore.collection('users').doc(uid).collection('exercises')
+      .where('date', isGreaterThanOrEqualTo: startOfLastMonth.toIso8601String())
+      .where('date', isLessThanOrEqualTo: endOfLastMonth.toIso8601String()).get();
 
-    int thisMonthKcal = 0;
-    double totalDrop = 0;
-    int dropCount = 0;
-
-    for (var doc in thisMonthSnap.docs) {
-      final data = doc.data();
-      thisMonthKcal += (data['estimatedCalories'] as num? ?? 0).toInt();
-      
-      // Şeker düşüşü hesapla (Egzersiz tamamlanmışsa)
-      if (data['isCompleted'] == true && data['glucoseBefore'] != null && data['glucoseAfter'] != null) {
-        totalDrop += (data['glucoseBefore'] - data['glucoseAfter']);
-        dropCount++;
-      }
-    }
-
-    int lastMonthKcal = 0;
-    for (var doc in lastMonthSnap.docs) {
-      lastMonthKcal += (doc.data()['estimatedCalories'] as num? ?? 0).toInt();
-    }
-
-    // Fark yüzdesi
-    double kcalDiff = 0;
-    if (lastMonthKcal > 0) {
-      kcalDiff = ((thisMonthKcal - lastMonthKcal) / lastMonthKcal) * 100;
-    }
-
-    return {
-      'count': thisMonthSnap.docs.length,
-      'calories': thisMonthKcal,
-      'avgDrop': dropCount > 0 ? (totalDrop / dropCount).round() : 0,
-      'difference': kcalDiff,
-    };
+  int thisMonthKcal = 0;
+  for (var doc in thisMonthSnap.docs) {
+    thisMonthKcal += (doc.data()['estimatedCalories'] as num? ?? 0).toInt();
   }
+
+  int lastMonthKcal = 0;
+  for (var doc in lastMonthSnap.docs) {
+    lastMonthKcal += (doc.data()['estimatedCalories'] as num? ?? 0).toInt();
+  }
+
+  double kcalDiff = 0;
+  if (lastMonthKcal > 0) {
+    kcalDiff = ((thisMonthKcal - lastMonthKcal) / lastMonthKcal) * 100;
+  } else if (thisMonthKcal > 0) {
+    kcalDiff = 100.0; 
+  }
+
+  return {
+    'count': thisMonthSnap.docs.length,
+    'calories': thisMonthKcal,
+    'difference': kcalDiff,
+  };
+}
 
  // 5. Günlük Özet Verilerini Hesaplama (Düzeltilmiş)
  Future<Map<String, dynamic>> getTodayStats() async {

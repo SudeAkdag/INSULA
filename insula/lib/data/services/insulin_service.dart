@@ -3,15 +3,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:insula/data/models/insulin_log_model.dart';
 
 /// İnsülin kayıtları için Firestore servisi.
-/// Veriler asenkron çekilir, UI donması önlenir.
 class InsulinService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String? get _uid => _auth.currentUser?.uid;
 
-  /// Son 24 saatteki insülin kayıtlarını getirir.
-  /// Sadece hızlı etkili insülin için aktif süre hesaplanır.
+  // ─── Okuma ──────────────────────────────────────────────────────────────────
+
+  /// Son 24 saatteki aktif insülin kayıtlarını getirir.
   Future<List<InsulinLog>> getRecentInsulinLogs({int limit = 20}) async {
     final uid = _uid;
     if (uid == null) return [];
@@ -36,6 +36,26 @@ class InsulinService {
     }
   }
 
+  /// Geçmiş sayfası için belirtilen adet insülin kaydını getirir (tüm zamanlar).
+  Future<List<InsulinLog>> getInsulinLogs({int limit = 300}) async {
+    final uid = _uid;
+    if (uid == null) return [];
+
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('insulinLogs')
+          .orderBy('timestamp', descending: true)
+          .limit(limit)
+          .get();
+
+      return snapshot.docs.map((doc) => InsulinLog.fromFirestore(doc)).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
   /// En son aktif insülin kaydını getirir (süre gösterimi için).
   Future<InsulinLog?> getLatestActiveInsulin() async {
     final logs = await getRecentInsulinLogs(limit: 10);
@@ -43,10 +63,14 @@ class InsulinService {
     return logs.first;
   }
 
+  // ─── Yazma ──────────────────────────────────────────────────────────────────
+
   /// Yeni insülin kaydı ekler.
   Future<void> addInsulinLog({
     required double units,
     required String type,
+    String site = 'Karın',
+    DateTime? timestamp,
     String? note,
   }) async {
     final uid = _uid;
@@ -60,10 +84,13 @@ class InsulinService {
           id: '',
           units: units,
           type: type,
-          timestamp: DateTime.now(),
+          site: site,
+          timestamp: timestamp ?? DateTime.now(),
           note: note,
         ).toMap());
   }
+
+  // ─── İstatistik ─────────────────────────────────────────────────────────────
 
   /// Bugün alınan toplam insülin (ünite).
   Future<double> getTodayInsulinTotal() async {
@@ -96,6 +123,8 @@ class InsulinService {
       return 0;
     }
   }
+
+  // ─── Stream ─────────────────────────────────────────────────────────────────
 
   /// Aktif insülin stream'i - anlık güncellemeler için.
   Stream<InsulinLog?> watchLatestActiveInsulin() {

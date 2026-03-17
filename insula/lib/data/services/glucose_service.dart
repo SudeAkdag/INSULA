@@ -28,12 +28,14 @@ class GlucoseService {
       final data = snapshot.docs.first.data();
       final value = (data['value'] as num?)?.toInt() ?? 0;
       final timestamp = (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+      final context = (data['context'] as String?)?.trim();
 
       return GlucoseReading(
         id: snapshot.docs.first.id,
         value: value,
         unit: 'mg/dL',
         status: _statusFromValue(value),
+        context: (context == null || context.isEmpty) ? 'Genel' : context,
         timestamp: timestamp,
       );
     } catch (e) {
@@ -66,11 +68,13 @@ class GlucoseService {
         final value = (data['value'] as num?)?.toInt() ?? 0;
         final timestamp =
             (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+        final context = (data['context'] as String?)?.trim();
         return GlucoseReading(
           id: doc.id,
           value: value,
           unit: 'mg/dL',
           status: _statusFromValue(value),
+          context: (context == null || context.isEmpty) ? 'Genel' : context,
           timestamp: timestamp,
         );
       }).toList();
@@ -82,6 +86,7 @@ class GlucoseService {
   /// Yeni kan şekeri ölçümü kaydeder.
   Future<void> addGlucoseReading({
     required int value,
+    required String context,
     DateTime? timestamp,
   }) async {
     final uid = _uid;
@@ -95,6 +100,7 @@ class GlucoseService {
       'value': value,
       'unit': 'mg/dL',
       'status': _statusFromValue(value),
+      'context': context,
       'timestamp': Timestamp.fromDate(timestamp ?? DateTime.now()),
     });
   }

@@ -5,27 +5,30 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class InsulinLog {
   final String id;
   final double units;
-  final String type; // Hızlı etkili, Uzun etkili, Karma
+  final String type;  // Hızlı etkili, Uzun etkili, Karma
+  final String site;  // Karın, Kol, Bacak, Kalça
   final DateTime timestamp;
   final String? note;
 
   /// Hızlı etkili insülin etki süresi (saat)
   static const double fastActingDurationHours = 3.5;
 
-  /// Uzun etkili insülin etki süresi (saat) - genelde gösterilmez, sadece hızlı etkili için
+  /// Uzun etkili insülin etki süresi (saat)
   static const double longActingDurationHours = 24.0;
 
   InsulinLog({
     required this.id,
     required this.units,
     required this.type,
+    this.site = 'Karın',
     required this.timestamp,
     this.note,
   });
 
   /// Bu dozun etki süresi (saat)
   double get durationHours {
-    if (type.toLowerCase().contains('hızlı') || type.toLowerCase().contains('kısa')) {
+    if (type.toLowerCase().contains('hızlı') ||
+        type.toLowerCase().contains('kısa')) {
       return fastActingDurationHours;
     }
     return longActingDurationHours;
@@ -52,6 +55,7 @@ class InsulinLog {
       id: doc.id,
       units: (data['units'] as num?)?.toDouble() ?? 0,
       type: data['type'] as String? ?? 'Hızlı etkili',
+      site: data['site'] as String? ?? 'Karın',
       timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
       note: data['note'] as String?,
     );
@@ -61,6 +65,7 @@ class InsulinLog {
     return {
       'units': units,
       'type': type,
+      'site': site,
       'timestamp': Timestamp.fromDate(timestamp),
       if (note != null) 'note': note,
     };

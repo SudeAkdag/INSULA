@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:insula/logic/viewmodels/home_viewmodel.dart';
 import 'package:insula/presentation/widgets/home/daily_summary_grid.dart';
 import 'package:insula/presentation/widgets/home/glucose_summary_card.dart';
-import 'package:insula/presentation/widgets/home/type1_glucose_summary_card.dart';
-import 'package:insula/presentation/widgets/home/glucose_trend_card.dart';
 import 'package:insula/presentation/widgets/home/home_header.dart';
 import 'package:insula/presentation/widgets/home/quick_actions_section.dart';
 import '../../core/theme/app_colors.dart';
@@ -42,19 +40,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 12),
                 Consumer<HomeViewModel>(
                   builder: (context, vm, _) {
-                    if (vm.isLoading && !vm.isType1) {
+                    if (vm.isLoading) {
                       return const _GlucoseCardPlaceholder();
                     }
-                    return vm.isType1
-                        ? const Type1GlucoseSummaryCard()
-                        : const GlucoseSummaryCard();
+                    return const GlucoseSummaryCard();
                   },
                 ),
                 const SizedBox(height: 12),
                 const QuickActionsSection(),
                 const SizedBox(height: 24),
                 const DailySummaryGrid(),
-                const GlucoseTrendCard(),
                 const SizedBox(height: 80),
               ],
             ),

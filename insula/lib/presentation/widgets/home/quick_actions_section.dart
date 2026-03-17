@@ -36,12 +36,6 @@ class _QuickActionsSectionState extends State<QuickActionsSection> {
   }
 
   void _onCategorySelected(int index) {
-    if (index == 4) {
-      // Acil Durum / Emergency - do not scroll, handle separately
-      // For now, maybe show a dialog or do nothing as requested "scrol açılmasın"
-      return;
-    }
-
     setState(() {
       _selectedIndex = index;
     });

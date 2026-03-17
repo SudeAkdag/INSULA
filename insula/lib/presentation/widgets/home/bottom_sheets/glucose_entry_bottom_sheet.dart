@@ -34,6 +34,16 @@ class _GlucoseEntryBottomSheetState extends State<_GlucoseEntryBottomSheet> {
   final _glucoseService = GlucoseService();
 
   bool _isSaving = false;
+  String _selectedContext = 'Açlık';
+
+  static const List<Map<String, dynamic>> _contexts = [
+    {'label': 'Açlık', 'icon': Icons.restaurant},
+    {'label': 'Yemek öncesi', 'icon': Icons.ramen_dining},
+    {'label': 'Yemek sonrası', 'icon': Icons.rice_bowl},
+    {'label': 'Egzersiz öncesi', 'icon': Icons.directions_run},
+    {'label': 'Egzersiz sonrası', 'icon': Icons.self_improvement},
+    {'label': 'Genel', 'icon': Icons.person_outline},
+  ];
 
   @override
   void dispose() {
@@ -58,7 +68,10 @@ class _GlucoseEntryBottomSheetState extends State<_GlucoseEntryBottomSheet> {
     setState(() => _isSaving = true);
 
     try {
-      await _glucoseService.addGlucoseReading(value: value);
+      await _glucoseService.addGlucoseReading(
+        value: value,
+        context: _selectedContext,
+      );
       if (!mounted) return;
       final navigator = Navigator.of(context);
       final messenger = ScaffoldMessenger.of(context);
@@ -66,7 +79,7 @@ class _GlucoseEntryBottomSheetState extends State<_GlucoseEntryBottomSheet> {
       widget.onSaved();
       messenger.showSnackBar(
         SnackBar(
-          content: Text('$value mg/dL kan şekeri kaydedildi'),
+          content: Text('$_selectedContext • $value mg/dL kaydedildi'),
           backgroundColor: AppColors.secondary,
         ),
       );
@@ -184,6 +197,81 @@ class _GlucoseEntryBottomSheetState extends State<_GlucoseEntryBottomSheet> {
                     fontSize: 12,
                     color: AppColors.textSecLight,
                   ),
+                ),
+                const SizedBox(height: 24),
+
+                Text(
+                  'Geçerli durumu seç',
+                  style: AppTextStyles.label.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: _contexts.map((c) {
+                    final label = c['label'] as String;
+                    final icon = c['icon'] as IconData;
+                    final selected = _selectedContext == label;
+                    return InkWell(
+                      onTap: () => setState(() => _selectedContext = label),
+                      borderRadius: BorderRadius.circular(18),
+                      child: Container(
+                        width: 110,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? AppColors.secondary.withOpacity(0.12)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: selected
+                                ? AppColors.secondary.withOpacity(0.35)
+                                : AppColors.navBar.withOpacity(0.35),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppColors.secondary.withOpacity(0.18)
+                                    : AppColors.backgroundLight,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                icon,
+                                color: selected
+                                    ? AppColors.secondary
+                                    : AppColors.textSecLight,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              label,
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.label.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: selected
+                                    ? AppColors.secondary
+                                    : AppColors.textSecLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ),
                 const SizedBox(height: 24),
 

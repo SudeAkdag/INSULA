@@ -3,6 +3,9 @@ class ChatMessage {
   final bool isUser;
   final DateTime time;
 
-  ChatMessage({required this.text, required this.isUser, DateTime? time}) 
-      : this.time = time ?? DateTime.now();
+  ChatMessage({
+    required this.text, 
+    required this.isUser, 
+    DateTime? time
+  }) : this.time = time ?? DateTime.now();
 }

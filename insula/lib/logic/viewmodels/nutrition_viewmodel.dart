@@ -16,9 +16,10 @@ class NutritionViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Favoriler & Sık Seçilenler
+  // Favoriler & son Seçilenler
   List<FoodItem> _favoriteFoods = [];
   List<FoodItem> _frequentFoods = [];
+  List<FoodItem> _userFoods = []; // foodStats'tan gelen tüm kayıtlı besinler
   bool _isFavoritesLoading = false;
 
   // ─── Getters ─────────────────────────────────────────────────────────────
@@ -29,6 +30,7 @@ class NutritionViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   List<FoodItem> get favoriteFoods => _favoriteFoods;
   List<FoodItem> get frequentFoods => _frequentFoods;
+  List<FoodItem> get userFoods => _userFoods;
   bool get isFavoritesLoading => _isFavoritesLoading;
 
   // Günlük toplam hesaplamaları (ViewModel seviyesinde computed getter'lar)
@@ -198,9 +200,9 @@ class NutritionViewModel extends ChangeNotifier {
     }
   }
 
-  // ─── Favoriler & Sık Seçilenler ───────────────────────────────────────────
+  // ─── Favoriler & son Seçilenler ───────────────────────────────────────────
 
-  /// Favorileri ve sık seçilenleri Firestore'dan yükler.
+  /// Favorileri ve son seçilenleri Firestore'dan yükler.
   /// AddFoodScreen açıldığında çağrılır.
   Future<void> loadFavoritesAndFrequent() async {
     if (_uid == null) return;
@@ -220,16 +222,27 @@ class NutritionViewModel extends ChangeNotifier {
           .map((doc) => FoodItem.fromMap(doc.data(), id: doc.id))
           .toList();
 
-      // Sık seçilenleri useCount'a göre azalan sırada çek (ilk 8)
+      // Son seçilenleri useCount'a göre azalan sırada çek (ilk 8)
       final statsSnap = await _firestore
           .collection('users')
           .doc(_uid)
           .collection('foodStats')
           .orderBy('useCount', descending: true)
-          .limit(8)
+          .limit(3)
           .get();
 
       _frequentFoods = statsSnap.docs
+          .map((doc) => FoodItem.fromMap(doc.data(), id: doc.id))
+          .toList();
+
+      // Kullanıcının tüm kayıtlı besinlerini çek (arama için)
+      final allStatsSnap = await _firestore
+          .collection('users')
+          .doc(_uid)
+          .collection('foodStats')
+          .get();
+
+      _userFoods = allStatsSnap.docs
           .map((doc) => FoodItem.fromMap(doc.data(), id: doc.id))
           .toList();
     } catch (e) {

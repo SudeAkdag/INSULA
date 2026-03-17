@@ -2,17 +2,30 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../data/services/exercise_service.dart';
 
-class HistorySummaryCard extends StatelessWidget {
+class HistorySummaryCard extends StatefulWidget {
   const HistorySummaryCard({super.key});
+
+  @override
+  State<HistorySummaryCard> createState() => _HistorySummaryCardState();
+}
+
+class _HistorySummaryCardState extends State<HistorySummaryCard> {
+  late Future<Map<String, dynamic>> _monthlyData;
+
+  @override
+  void initState() {
+    super.initState();
+    _monthlyData = ExerciseService().getMonthlyComparison();
+  }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: ExerciseService().getMonthlyComparison(),
+      future: _monthlyData,
       builder: (context, snapshot) {
         final bool isLoading = snapshot.connectionState == ConnectionState.waiting;
-        final stats = snapshot.data ?? {'count': 0, 'calories': 0, 'avgDrop': 0, 'difference': 0.0};
-        final double diff = stats['difference'];
+        final stats = snapshot.data ?? {'count': 0, 'calories': 0, 'difference': 0.0};
+        final double diff = (stats['difference'] as num).toDouble();
 
         return Container(
           padding: const EdgeInsets.all(20),
@@ -29,6 +42,7 @@ class HistorySummaryCard extends StatelessWidget {
             ],
           ),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -37,7 +51,7 @@ class HistorySummaryCard extends StatelessWidget {
                     "BU AY ÖZETİ",
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.secondary),
                   ),
-                  Icon(Icons.calendar_month, color: AppColors.primary, size: 20),
+                  const Icon(Icons.calendar_month, color: AppColors.primary, size: 20),
                 ],
               ),
               const SizedBox(height: 20),
@@ -45,13 +59,13 @@ class HistorySummaryCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildStatItem("Egzersiz", isLoading ? "..." : "${stats['count']}"),
-                  _buildStatItem("Kalori", isLoading ? "..." : "${stats['calories']}"),
+                  _buildStatItem("Kalori", isLoading ? "..." : "${stats['calories']} kcal"),
                   
                   // Karşılaştırma Göstergesi
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text("Önceki Aya Göre", style: TextStyle(fontSize: 9, color: Colors.grey)),
+                      const Text("Önceki Aya Göre", style: TextStyle(fontSize: 12, color: Color.fromARGB(255, 71, 71, 71))),
                       const SizedBox(height: 4),
                       Row(
                         children: [
@@ -71,20 +85,6 @@ class HistorySummaryCard extends StatelessWidget {
                         ],
                       ),
                     ],
-                  ),
-                ],
-              ),
-              const Divider(height: 32, color: AppColors.backgroundLight),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Ortalama Şeker Düşüşü",
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecLight),
-                  ),
-                  Text(
-                    isLoading ? "..." : "${stats['avgDrop']} mg/dL",
-                    style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 16),
                   ),
                 ],
               ),
