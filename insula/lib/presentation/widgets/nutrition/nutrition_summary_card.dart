@@ -14,6 +14,7 @@ class NutritionSummaryCard extends StatelessWidget {
   final double protein;
   final double fat;
   final ValueChanged<int>? onCarbGoalChanged;
+  final VoidCallback? onReportTap;
 
   const NutritionSummaryCard({
     super.key,
@@ -24,6 +25,7 @@ class NutritionSummaryCard extends StatelessWidget {
     this.protein = 0.0,
     this.fat = 0.0,
     this.onCarbGoalChanged,
+    this.onReportTap,
   });
 
   @override
@@ -199,7 +201,7 @@ class NutritionSummaryCard extends StatelessWidget {
                 SizedBox(
                   width: 140,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: onReportTap,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.secondary,
                       foregroundColor: Colors.white,
