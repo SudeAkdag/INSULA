@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../data/models/medication_model.dart';
+import '../../../logic/providers/medication_search_provider.dart';
 import 'add_medication_select_field.dart';
 
 /// İlaç ekleme sayfasındaki ilk kart: İlaç Adı, İlaç Türü, Dozaj, Sıklık.
-class AddMedicationFormCard extends StatelessWidget {
+class AddMedicationFormCard extends ConsumerWidget {
   final TextEditingController nameController;
   final String medicationType;
   final String dosage;
@@ -17,6 +21,7 @@ class AddMedicationFormCard extends StatelessWidget {
   final VoidCallback onStartDateTap;
   final VoidCallback onEndDateTap;
   final String? Function(String?)? nameValidator;
+  final Function(Medication) onMedicationSelected;
 
   const AddMedicationFormCard({
     super.key,
@@ -31,13 +36,14 @@ class AddMedicationFormCard extends StatelessWidget {
     required this.onFrequencyTap,
     required this.onStartDateTap,
     required this.onEndDateTap,
+    required this.onMedicationSelected,
     this.nameValidator,
   });
 
   static const double _cardRadius = 16;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -59,22 +65,48 @@ class AddMedicationFormCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildLabel('İlaç Adı'),
-          TextFormField(
+          TypeAheadField<Medication>(
             controller: nameController,
-            decoration: InputDecoration(
-              hintText: 'Örn: Metformin',
-              hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
-              filled: true,
-              fillColor: AppColors.backgroundLight,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              suffixIcon: Icon(Icons.search, color: AppColors.accentTeal, size: 22),
+            builder: (context, controller, focusNode) {
+              return TextFormField(
+                controller: controller,
+                focusNode: focusNode,
+                decoration: InputDecoration(
+                  hintText: 'Örn: Metformin',
+                  hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
+                  filled: true,
+                  fillColor: AppColors.backgroundLight,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  suffixIcon: const Icon(Icons.search, color: AppColors.accentTeal, size: 22),
+                ),
+                style: AppTextStyles.body,
+                validator: nameValidator,
+              );
+            },
+            suggestionsCallback: (pattern) async {
+              return await ref.read(medicationSearchProvider.notifier).search(pattern);
+            },
+            itemBuilder: (context, drug) {
+              return ListTile(
+                leading: const Icon(Icons.medication, color: AppColors.accentTeal),
+                title: Text(drug.name, style: AppTextStyles.body),
+                subtitle: Text("${drug.dosage} - ${drug.form}", style: AppTextStyles.label),
+              );
+            },
+            onSelected: onMedicationSelected,
+            loadingBuilder: (context) => const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
             ),
-            style: AppTextStyles.body,
-            validator: nameValidator,
+            emptyBuilder: (context) => Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text("Sonuç bulunamadı!", style: AppTextStyles.body.copyWith(color: Colors.red)),
+            ),
+            debounceDuration: const Duration(milliseconds: 400),
           ),
           const SizedBox(height: 6),
           AddMedicationSelectField(

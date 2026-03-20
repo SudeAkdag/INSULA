@@ -1,10 +1,69 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import '../models/medication_model.dart';
 
 class MedicationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // 1. JSON (Offline) Katalog Önbelleği
+  List<Medication>? _catalogCache;
+
+  Future<List<Medication>> _loadCatalog() async {
+    if (_catalogCache != null) return _catalogCache!;
+    try {
+      final jsonString = await rootBundle.loadString('assets/ilaclar.json');
+      final List<dynamic> jsonList = json.decode(jsonString) as List;
+      _catalogCache = jsonList.map((e) => Medication.fromJson(e as Map<String, dynamic>)).toList();
+      return _catalogCache!;
+    } catch (e) {
+      debugPrint("Katalog yükleme hatası: $e");
+      return [];
+    }
+  }
+
+  // 2. Hibrit Arama Koordinatörü
+  Future<List<Medication>> searchCatalog(String query) async {
+    final trimmedQuery = query.trim().toLowerCase();
+    if (trimmedQuery.length < 2) return [];
+
+    // Önce offline ara
+    final catalog = await _loadCatalog();
+    
+    // Arama Mantığı Geliştirildi:
+    // 1. Önce tam olarak bu kelimeyle başlayanları bul (öncelikli)
+    // 2. Sonra içinde geçenleri bul
+    final startsWith = catalog
+        .where((m) => m.name.toLowerCase().startsWith(trimmedQuery))
+        .toList();
+        
+    final contains = catalog
+        .where((m) => m.name.toLowerCase().contains(trimmedQuery) && 
+                     !m.name.toLowerCase().startsWith(trimmedQuery))
+        .toList();
+
+    final allResults = [...startsWith, ...contains];
+
+    if (allResults.isNotEmpty) {
+      return allResults.take(30).toList(); // Sonuç sayısını 30'a çıkardım
+    }
+
+    // Offline'da yoksa Firestore'dan (Online) getir
+    try {
+      final snapshot = await _firestore
+          .collection('ilaclar')
+          .where('searchKeywords', arrayContains: trimmedQuery)
+          .limit(10)
+          .get();
+
+      return snapshot.docs.map((doc) => Medication.fromJson(doc.data())).toList();
+    } catch (e) {
+      return [];
+    }
+  }
 
   // Collection reference for user medications
   CollectionReference<Map<String, dynamic>> _getUserMedicationsCollection() {

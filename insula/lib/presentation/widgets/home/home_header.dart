@@ -25,11 +25,7 @@ class HomeHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.primary, width: 2),
-                  image: const DecorationImage(
-                    image: NetworkImage(
-                        "https://lh3.googleusercontent.com/aida-public/AB6AXuDAESvp-Cz8XYs7PkZlDp53ygqp6KjZ4kAfTrFmvFR6nTTYmXYPrrlkqmlFGzZmqlrx6-uWsWQu6EUvkE5AxwEWgk5JGPzay8EWsByY98nt3ATu1W8GrAo7OLvlm67dvwezTHszbTFk6VdqTDW4puIEODx6QguO0iCcv_0zoqPPAhwjN9SzGMYPSXyQ6QGBv4DEV4UM_3LflcbPd3T7UrViNP2vY0k2dGsMEM9KC6FlUL19qFb81VgElf7vorL0kxrjOyxJKx8fKY"),
-                    fit: BoxFit.cover,
-                  ),
+                  color: AppColors.primary.withOpacity(0.1),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
@@ -37,6 +33,15 @@ class HomeHeader extends StatelessWidget {
                       offset: const Offset(0, 2),
                     ),
                   ],
+                ),
+                child: ClipOval(
+                  child: Image.network(
+                    "https://lh3.googleusercontent.com/aida-public/AB6AXuDAESvp-Cz8XYs7PkZlDp53ygqp6KjZ4kAfTrFmvFR6nTTYmXYPrrlkqmlFGzZmqlrx6-uWsWQu6EUvkE5AxwEWgk5JGPzay8EWsByY98nt3ATu1W8GrAo7OLvlm67dvwezTHszbTFk6VdqTDW4puIEODx6QguO0iCcv_0zoqPPAhwjN9SzGMYPSXyQ6QGBv4DEV4UM_3LflcbPd3T7UrViNP2vY0k2dGsMEM9KC6FlUL19qFb81VgElf7vorL0kxrjOyxJKx8fKY",
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.person, color: AppColors.primary, size: 28);
+                    },
+                  ),
                 ),
               ),
               const SizedBox(width: 12),

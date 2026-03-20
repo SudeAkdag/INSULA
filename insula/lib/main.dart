@@ -12,6 +12,8 @@ import 'presentation/screens/main_screen.dart';
 import 'presentation/screens/auth/welcome_screen.dart';
 import 'presentation/screens/auth/profile_setup_screen.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 void main() async {
   // 1. Flutter alt yapısını hazırla
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +31,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const InsulaApp());
+  runApp(const ProviderScope(child: InsulaApp()));
 }
 
 class InsulaApp extends StatelessWidget {
