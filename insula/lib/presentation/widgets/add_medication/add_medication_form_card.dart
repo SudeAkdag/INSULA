@@ -72,7 +72,7 @@ class AddMedicationFormCard extends ConsumerWidget {
                 controller: controller,
                 focusNode: focusNode,
                 decoration: InputDecoration(
-                  hintText: 'Örn: Metformin',
+                  hintText: 'Örn: Parasetamol',
                   hintStyle: AppTextStyles.body.copyWith(color: Colors.grey),
                   filled: true,
                   fillColor: AppColors.backgroundLight,
