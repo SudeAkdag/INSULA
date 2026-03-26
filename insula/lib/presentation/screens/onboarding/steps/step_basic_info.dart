@@ -24,42 +24,40 @@ class StepBasicInfo extends StatefulWidget {
 class _StepBasicInfoState extends State<StepBasicInfo> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _ageController = TextEditingController();
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
 
   static const _genders = ['Erkek', 'Kadın', 'Diğer'];
   String _gender = 'Erkek';
+  DateTime? _birthDate;
 
   @override
   void initState() {
     super.initState();
     _nameController.text = widget.data.fullName ?? '';
     _emailController.text = widget.data.email ?? '';
-    if (widget.data.age != null) _ageController.text = widget.data.age.toString();
     if (widget.data.heightCm != null) _heightController.text = widget.data.heightCm!.toInt().toString();
     if (widget.data.weightKg != null) _weightController.text = widget.data.weightKg!.toInt().toString();
     _gender = widget.data.gender ?? _genders[0];
+    _birthDate = widget.data.birthDate;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _ageController.dispose();
     _heightController.dispose();
     _weightController.dispose();
     super.dispose();
   }
 
   void _emit() {
-    final age = int.tryParse(_ageController.text.trim());
     final height = double.tryParse(_heightController.text.trim());
     final weight = double.tryParse(_weightController.text.trim());
     widget.onChanged(widget.data.copyWith(
       fullName: _nameController.text.trim().isEmpty ? null : _nameController.text.trim(),
       email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
-      age: age,
+      birthDate: _birthDate,
       heightCm: height,
       weightKg: weight,
       gender: _gender,
@@ -69,12 +67,51 @@ class _StepBasicInfoState extends State<StepBasicInfo> {
   bool get _canNext {
     final name = _nameController.text.trim().isNotEmpty;
     final email = _emailController.text.trim().isNotEmpty;
-    final age = int.tryParse(_ageController.text.trim());
     final height = double.tryParse(_heightController.text.trim());
     final weight = double.tryParse(_weightController.text.trim());
-    return name && email && (age != null && age > 0 && age < 120) &&
+    return name &&
+        email &&
+        _birthDate != null &&
         (height != null && height > 0 && height < 250) &&
         (weight != null && weight > 0 && weight < 300);
+  }
+
+  Future<void> _pickBirthDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _birthDate ?? DateTime(now.year - 30),
+      firstDate: DateTime(1900),
+      lastDate: now,
+      locale: const Locale('tr', 'TR'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.secondary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black87,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        _birthDate = picked;
+        _emit();
+      });
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   @override
@@ -134,18 +171,37 @@ class _StepBasicInfoState extends State<StepBasicInfo> {
           ),
           const SizedBox(height: AppSpacing.md),
 
+          // Doğum Tarihi DatePicker
           OnboardingInputCard(
             icon: Icons.cake_outlined,
-            label: 'Yaş',
-            child: TextField(
-              controller: _ageController,
-              onChanged: (_) => setState(() {}),
-              keyboardType: TextInputType.number,
-              style: const TextStyle(fontSize: 18),
-              decoration: const InputDecoration(
-                hintText: 'Örn: 45',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 16),
+            label: 'Doğum Tarihi',
+            child: InkWell(
+              onTap: _pickBirthDate,
+              borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 18),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _birthDate != null
+                            ? _formatDate(_birthDate!)
+                            : 'Tarih seçin',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: _birthDate != null
+                              ? Colors.black87
+                              : Colors.grey.shade500,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.calendar_month_outlined,
+                      color: AppColors.secondary,
+                      size: 22,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

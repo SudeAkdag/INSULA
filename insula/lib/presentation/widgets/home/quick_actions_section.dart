@@ -18,9 +18,9 @@ class _QuickActionsSectionState extends State<QuickActionsSection> {
 
   final List<Widget> _pages = [
     const InsulinCard(),
-    const SleepTrackingCard(),
-    const WaterIntakeCard(),
-    const MedicineCard(),
+    SleepTrackingCard(),
+    WaterIntakeCard(),
+    //const MedicineCard(),
   ];
 
   @override

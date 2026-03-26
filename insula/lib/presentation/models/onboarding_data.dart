@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 /// Onboarding akışında toplanan tüm veriler.
 /// Firestore'a kaydedilecek alanlarla uyumludur.
 class OnboardingData {
@@ -5,7 +7,7 @@ class OnboardingData {
     this.fullName,
     this.email,
     this.password,
-    this.age,
+    this.birthDate,
     this.heightCm,
     this.weightKg,
     this.gender,
@@ -14,7 +16,6 @@ class OnboardingData {
     this.usesInsulin,
     this.insulinType,
     this.insulinDeliveryMethod,
-    this.carbRatio,
     this.glucoseMeasurementFrequency,
     this.usesCgm,
     this.targetGlucoseMin,
@@ -22,6 +23,8 @@ class OnboardingData {
     this.weeklyExerciseDays,
     this.sleepHoursPerNight,
     this.improvementGoals,
+    this.chronicDiseases,
+    this.allergies,
     this.emergencyContactName,
     this.emergencyContactPhone,
     this.hasSevereHypoglycemiaHistory,
@@ -34,7 +37,7 @@ class OnboardingData {
   String? fullName;
   String? email;
   String? password;
-  int? age;
+  DateTime? birthDate;
   double? heightCm;
   double? weightKg;
   String? gender;
@@ -47,7 +50,6 @@ class OnboardingData {
   bool? usesInsulin;
   String? insulinType; // Hızlı, Uzun etkili, Karma
   String? insulinDeliveryMethod; // Kalem, Pompa
-  int? carbRatio; // 1 ünite insülin / X g karbonhidrat (örn: 10 = 1:10)
 
   // Glikoz izleme
   String? glucoseMeasurementFrequency; // Günlük ölçüm sıklığı
@@ -59,6 +61,10 @@ class OnboardingData {
   int? weeklyExerciseDays;
   double? sleepHoursPerNight;
   List<String>? improvementGoals;
+
+  // Sağlık durumu
+  String? chronicDiseases;
+  String? allergies;
 
   // Acil durum ve güvenlik
   String? emergencyContactName;
@@ -74,7 +80,7 @@ class OnboardingData {
     String? fullName,
     String? email,
     String? password,
-    int? age,
+    DateTime? birthDate,
     double? heightCm,
     double? weightKg,
     String? gender,
@@ -83,7 +89,6 @@ class OnboardingData {
     bool? usesInsulin,
     String? insulinType,
     String? insulinDeliveryMethod,
-    int? carbRatio,
     String? glucoseMeasurementFrequency,
     bool? usesCgm,
     int? targetGlucoseMin,
@@ -91,6 +96,8 @@ class OnboardingData {
     int? weeklyExerciseDays,
     double? sleepHoursPerNight,
     List<String>? improvementGoals,
+    String? chronicDiseases,
+    String? allergies,
     String? emergencyContactName,
     String? emergencyContactPhone,
     bool? hasSevereHypoglycemiaHistory,
@@ -102,7 +109,7 @@ class OnboardingData {
       fullName: fullName ?? this.fullName,
       email: email ?? this.email,
       password: password ?? this.password,
-      age: age ?? this.age,
+      birthDate: birthDate ?? this.birthDate,
       heightCm: heightCm ?? this.heightCm,
       weightKg: weightKg ?? this.weightKg,
       gender: gender ?? this.gender,
@@ -111,7 +118,6 @@ class OnboardingData {
       usesInsulin: usesInsulin ?? this.usesInsulin,
       insulinType: insulinType ?? this.insulinType,
       insulinDeliveryMethod: insulinDeliveryMethod ?? this.insulinDeliveryMethod,
-      carbRatio: carbRatio ?? this.carbRatio,
       glucoseMeasurementFrequency:
           glucoseMeasurementFrequency ?? this.glucoseMeasurementFrequency,
       usesCgm: usesCgm ?? this.usesCgm,
@@ -120,6 +126,8 @@ class OnboardingData {
       weeklyExerciseDays: weeklyExerciseDays ?? this.weeklyExerciseDays,
       sleepHoursPerNight: sleepHoursPerNight ?? this.sleepHoursPerNight,
       improvementGoals: improvementGoals ?? this.improvementGoals,
+      chronicDiseases: chronicDiseases ?? this.chronicDiseases,
+      allergies: allergies ?? this.allergies,
       emergencyContactName: emergencyContactName ?? this.emergencyContactName,
       emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
       hasSevereHypoglycemiaHistory:
@@ -140,6 +148,8 @@ class OnboardingData {
       'insulinType': insulinType,
       'insulinDeliveryMethod': insulinDeliveryMethod,
       'glucoseMeasurementFrequency': glucoseMeasurementFrequency,
+      'chronicDiseases': chronicDiseases,
+      'allergies': allergies,
       'emergencyContactName': emergencyContactName,
       'emergencyContactPhone': emergencyContactPhone,
     };
@@ -147,12 +157,11 @@ class OnboardingData {
     for (final e in map.entries) {
       if (e.value != null && e.value!.isNotEmpty) out[e.key] = e.value;
     }
-    if (age != null) out['age'] = age;
+    if (birthDate != null) out['birthDate'] = Timestamp.fromDate(birthDate!);
     if (heightCm != null) out['height'] = heightCm;
     if (weightKg != null) out['weight'] = weightKg;
     if (diagnosisYear != null) out['diagnosisYear'] = diagnosisYear;
     if (usesInsulin != null) out['usesInsulin'] = usesInsulin;
-    if (carbRatio != null) out['carbRatio'] = carbRatio;
     if (usesCgm != null) out['usesCgm'] = usesCgm;
     if (targetGlucoseMin != null) out['targetGlucoseMin'] = targetGlucoseMin;
     if (targetGlucoseMax != null) out['targetGlucoseMax'] = targetGlucoseMax;

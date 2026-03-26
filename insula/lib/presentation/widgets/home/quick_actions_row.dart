@@ -18,8 +18,12 @@ class QuickActionsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> actions = [
-      {"label": "İnsülin", "icon": Icons.vaccines, "color": AppColors.primary},
-      {"label": "Uyku", "icon": Icons.nightlight, "color": AppColors.secondary},
+      {
+        "label": "İnsülin",
+        "icon": Icons.vaccines,
+        "color": AppColors.secondary
+      },
+      {"label": "Uyku", "icon": Icons.nightlight, "color": AppColors.primary},
       {"label": "Su", "icon": Icons.water_drop, "color": AppColors.tertiary},
       {"label": "İlaç", "icon": Icons.medication, "color": NutrientColors.fat},
     ];
@@ -106,7 +110,7 @@ class _QuickActionButton extends StatelessWidget {
           style: AppTextStyles.label.copyWith(
             fontSize: 11,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? AppColors.primary : AppColors.textSecLight,
+            color: isSelected ? AppColors.surfaceDark : AppColors.textSecLight,
           ),
         ),
       ],

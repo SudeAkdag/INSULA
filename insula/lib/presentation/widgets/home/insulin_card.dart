@@ -54,6 +54,8 @@ class InsulinCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0xffffffff),
             borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+                color: AppColors.secondary.withOpacity(0.2), width: 3),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xffffffff).withOpacity(0.3),
@@ -64,18 +66,6 @@ class InsulinCard extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              Positioned(
-                right: -24,
-                bottom: -24,
-                child: Container(
-                  width: 128,
-                  height: 128,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
               Column(
                 children: [
                   // ── Başlık ───────────────────────────────────────

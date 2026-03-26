@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -6,7 +7,6 @@ import 'profile_base_components.dart';
 class ProfilePersonalInfoCard extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController emailController;
-  final TextEditingController ageController;
   final String? gender;
   final DateTime? dob;
   final VoidCallback onPickDob;
@@ -16,15 +16,28 @@ class ProfilePersonalInfoCard extends StatelessWidget {
     super.key,
     required this.nameController,
     required this.emailController,
-    required this.ageController,
     this.gender,
     this.dob,
     required this.onPickDob,
     required this.onGenderChanged,
   });
 
+  /// Doğum tarihinden yaş hesapla
+  int? _calculateAge(DateTime? birthDate) {
+    if (birthDate == null) return null;
+    final today = DateTime.now();
+    int age = today.year - birthDate.year;
+    if (today.month < birthDate.month ||
+        (today.month == birthDate.month && today.day < birthDate.day)) {
+      age--;
+    }
+    return age;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final age = _calculateAge(dob);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -50,19 +63,46 @@ class ProfilePersonalInfoCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(
-                    child: ProfileBaseComponents.buildField(
-                      'Yaş',
-                      ageController,
-                      keyboard: TextInputType.number,
-                    ),
-                  ),
+                  Expanded(child: _buildAgeDisplay(age)),
                   const SizedBox(width: 12),
                   Expanded(child: _buildGenderField()),
                 ],
               ),
               const SizedBox(height: 8),
               _buildDobField(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Doğum tarihinden hesaplanan salt-okunur yaş gösterimi
+  Widget _buildAgeDisplay(int? age) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ProfileBaseComponents.buildLabel('Yaş'),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.secondary.withAlpha(12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.secondary.withAlpha(40)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  age != null ? '$age yaş' : '— yaş',
+                  style: AppTextStyles.body.copyWith(
+                    color: age != null ? AppColors.secondary : Colors.grey.shade500,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Icon(Icons.cake_outlined,
+                  color: AppColors.secondary.withAlpha(160), size: 18),
             ],
           ),
         ),

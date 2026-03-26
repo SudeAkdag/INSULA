@@ -9,6 +9,7 @@ import 'package:insula/presentation/screens/onboarding/steps/step_diabetes_profi
 import 'package:insula/presentation/screens/onboarding/steps/step_treatment.dart';
 import 'package:insula/presentation/screens/onboarding/steps/step_glucose_monitoring.dart';
 import 'package:insula/presentation/screens/onboarding/steps/step_lifestyle_goals.dart';
+import 'package:insula/presentation/screens/onboarding/steps/step_health_conditions.dart';
 import 'package:insula/presentation/screens/onboarding/steps/step_emergency_security.dart';
 import 'package:insula/presentation/screens/onboarding/steps/step_notifications_final.dart';
 
@@ -21,7 +22,7 @@ class OnboardingFlowScreen extends StatefulWidget {
 }
 
 class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
-  static const int _totalSteps = 7;
+  static const int _totalSteps = 8;
   final PageController _pageController = PageController();
   final AuthViewModel _authViewModel = AuthViewModel();
 
@@ -131,36 +132,49 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                     controller: _pageController,
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
+                      // Adım 1: Temel Bilgiler
                       StepBasicInfo(
                         data: _data,
                         onChanged: (d) => setState(() => _data = d),
                         onNext: _goNext,
                       ),
+                      // Adım 2: Diyabet Profili
                       StepDiabetesProfile(
                         data: _data,
                         onChanged: (d) => setState(() => _data = d),
                         onNext: _goNext,
                       ),
+                      // Adım 3: Tedavi Bilgileri
                       StepTreatment(
                         data: _data,
                         onChanged: (d) => setState(() => _data = d),
                         onNext: _goNext,
                       ),
+                      // Adım 4: Glikoz İzleme
                       StepGlucoseMonitoring(
                         data: _data,
                         onChanged: (d) => setState(() => _data = d),
                         onNext: _goNext,
                       ),
+                      // Adım 5: Yaşam Tarzı ve Hedefler
                       StepLifestyleGoals(
                         data: _data,
                         onChanged: (d) => setState(() => _data = d),
                         onNext: _goNext,
                       ),
+                      // Adım 6: Sağlık Durumu (Kronik Hastalıklar & Alerjiler)
+                      StepHealthConditions(
+                        data: _data,
+                        onChanged: (d) => setState(() => _data = d),
+                        onNext: _goNext,
+                      ),
+                      // Adım 7: Acil Durum ve Güvenlik
                       StepEmergencySecurity(
                         data: _data,
                         onChanged: (d) => setState(() => _data = d),
                         onNext: _goNext,
                       ),
+                      // Adım 8: Bildirimler & Tamamla
                       StepNotificationsFinal(
                         data: _data,
                         onChanged: (d) => setState(() => _data = d),

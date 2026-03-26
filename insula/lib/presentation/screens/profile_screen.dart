@@ -29,7 +29,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String? _gender;
   DateTime? _dob;
-  final _ageCtrl = TextEditingController();
 
   final _heightCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
@@ -70,7 +69,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
-    _ageCtrl.dispose();
     _heightCtrl.dispose();
     _weightCtrl.dispose();
     _chronicCtrl.dispose();
@@ -123,9 +121,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _emailCtrl.text = (data['email'] ?? _emailCtrl.text).toString();
       _gender = (data['gender'] as String?) ?? _gender;
       
-      if (data['age'] != null) {
-        _ageCtrl.text = data['age'].toString();
-      }
 
       final bd = data['birthDate'];
       if (bd is Timestamp) _dob = bd.toDate();
@@ -216,7 +211,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'fullName': _nameCtrl.text.trim(),
         'email': _emailCtrl.text.trim(),
         'gender': _gender,
-        'age': int.tryParse(_ageCtrl.text.trim()),
         'birthDate': _dob == null ? null : Timestamp.fromDate(_dob!),
         'height': height,
         'weight': weight,
@@ -339,7 +333,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ProfilePersonalInfoCard(
                     nameController: _nameCtrl,
                     emailController: _emailCtrl,
-                    ageController: _ageCtrl,
                     gender: _gender,
                     dob: _dob,
                     onPickDob: _pickDob,

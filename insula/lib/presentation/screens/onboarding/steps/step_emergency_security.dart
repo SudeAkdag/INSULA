@@ -163,6 +163,26 @@ class _StepEmergencySecurityState extends State<StepEmergencySecurity> {
               child: const Text('Devam', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Skip butonu – validasyon atla
+          SizedBox(
+            height: 48,
+            child: TextButton(
+              onPressed: () {
+                _emit();
+                widget.onNext();
+              },
+              child: Text(
+                'Sonra ekleyeceğim',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.textSecLight,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: AppSpacing.xl),
         ],
       ),
