@@ -71,7 +71,7 @@ class SleepTrackingCard extends StatelessWidget {
                           const Icon(Icons.nightlight,
                               color: AppColors.primaryDark, size: 28),
                           const SizedBox(width: 8),
-                          Text("Uyku Takibi",
+                          Text("UYKU TAKİBİ",
                               style: AppTextStyles.h1.copyWith(
                                   color: AppColors.primaryDark, fontSize: 20)),
                         ],

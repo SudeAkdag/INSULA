@@ -67,7 +67,7 @@ class WaterIntakeCard extends StatelessWidget {
                           color: AppColors.tertiary, size: 28),
                       const SizedBox(width: 8),
                       Text(
-                        "Su Tüketimi",
+                        "SU TAKİBİ",
                         style: AppTextStyles.h1
                             .copyWith(color: AppColors.tertiary, fontSize: 20),
                       ),

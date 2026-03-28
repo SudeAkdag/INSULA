@@ -20,7 +20,7 @@ class _QuickActionsSectionState extends State<QuickActionsSection> {
     const InsulinCard(),
     SleepTrackingCard(),
     WaterIntakeCard(),
-    //const MedicineCard(),
+    const MedicineCard(),
   ];
 
   @override
