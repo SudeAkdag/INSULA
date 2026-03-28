@@ -218,7 +218,7 @@ class _MedicineCardState extends State<MedicineCard> {
                         style: AppTextStyles.h1.copyWith(
                           color: NutrientColors.fat,
                           fontSize:
-                              14, // İlaç adı fontu karta daha uygun boyuta çekildi
+                              12, // İlaç adı fontu karta daha uygun boyuta çekildi
                         ),
                       ),
                       if (hasNext && _nextDoseDetail.isNotEmpty) ...[
@@ -236,7 +236,6 @@ class _MedicineCardState extends State<MedicineCard> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
