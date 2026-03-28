@@ -168,15 +168,22 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
       'notes': _notesController.text.trim(),
     };
     
-    if (widget.medication != null && widget.medication!['takenFlags'] != null) {
-      final oldFlags = widget.medication!['takenFlags'] as List<bool>;
-      final newDoseCount = _doseTimes.length;
-      if (oldFlags.length == newDoseCount) {
-        medicationData['takenFlags'] = List<bool>.from(oldFlags);
-      } else {
-        medicationData['takenFlags'] = List<bool>.filled(newDoseCount, false);
+    if (widget.medication != null) {
+      if (widget.medication!['takenHistory'] != null) {
+        medicationData['takenHistory'] = widget.medication!['takenHistory'];
+      }
+      
+      if (widget.medication!['takenFlags'] != null) {
+        final oldFlags = widget.medication!['takenFlags'] as List<bool>;
+        final newDoseCount = _doseTimes.length;
+        if (oldFlags.length == newDoseCount) {
+          medicationData['takenFlags'] = List<bool>.from(oldFlags);
+        } else {
+          medicationData['takenFlags'] = List<bool>.filled(newDoseCount, false);
+        }
       }
     } else {
+      medicationData['takenHistory'] = <String, dynamic>{};
       medicationData['takenFlags'] = List<bool>.filled(_doseTimes.length, false);
     }
     

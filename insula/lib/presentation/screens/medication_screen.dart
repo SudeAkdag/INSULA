@@ -75,9 +75,15 @@ class _MedicationScreenState extends State<MedicationScreen> {
     });
   }
 
+  String _dateKey(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
   List<MedicationCardData> _getMedicationsForSection(String usageTime) {
     final medications = <MedicationCardData>[];
     final standardTimes = {'Sabah', 'Öğle', 'Akşam'};
+    final selectedDate = _selectedDate ?? DateTime.now();
+    final dateKey = _dateKey(selectedDate);
     
     for (int medIndex = 0; medIndex < _savedMedications.length; medIndex++) {
       final med = _savedMedications[medIndex];
@@ -85,7 +91,6 @@ class _MedicationScreenState extends State<MedicationScreen> {
       // Tarih filtrelemesi
       final DateTime? startDate = med['startDate'] != null ? med['startDate'] as DateTime : null;
       final DateTime? endDate = med['endDate'] != null ? med['endDate'] as DateTime : null;
-      final selectedDate = _selectedDate ?? DateTime.now();
 
       // Sadece günü karşılaştır
       final selectedDateOnly = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
@@ -104,6 +109,10 @@ class _MedicationScreenState extends State<MedicationScreen> {
       final doseTimes = med['doseTimes'] as List<TimeOfDay>;
       final doseAmounts = med['doseAmounts'] as List<String>;
       
+      // Tarih bazlı içilme durumu
+      final takenHistory = med['takenHistory'] as Map<String, dynamic>? ?? {};
+      final takenFlags = takenHistory[dateKey] as List<dynamic>?;
+      
       for (int i = 0; i < doseUsageTimes.length; i++) {
         final doseUsageTime = doseUsageTimes[i];
         
@@ -114,6 +123,15 @@ class _MedicationScreenState extends State<MedicationScreen> {
         
         if (shouldInclude) {
           final timeStr = '${doseTimes[i].hour.toString().padLeft(2, '0')}:${doseTimes[i].minute.toString().padLeft(2, '0')}';
+          
+          bool isTaken = false;
+          if (takenFlags != null && takenFlags.length > i) {
+            isTaken = takenFlags[i] as bool;
+          } else if (med['takenFlags'] != null && (med['takenFlags'] as List).length > i && dateKey == _dateKey(DateTime.now())) {
+            // Eski veri uyumluluğu: Eğer bugündeysek ve takenHistory yoksa takenFlags kullan
+            isTaken = (med['takenFlags'] as List)[i] as bool;
+          }
+
           medications.add(
             MedicationCardData(
               name: med['name'] as String,
@@ -122,9 +140,7 @@ class _MedicationScreenState extends State<MedicationScreen> {
               icon: Icons.medication,
               iconColor: Colors.blue.shade300,
               dosageColor: Colors.blue,
-              isTaken: (med['takenFlags'] != null && (med['takenFlags'] as List).length > i)
-                  ? (med['takenFlags'] as List)[i] as bool
-                  : false,
+              isTaken: isTaken,
               parentIndex: medIndex,
               doseIndex: i,
             ),
@@ -162,9 +178,9 @@ class _MedicationScreenState extends State<MedicationScreen> {
                 _selectedDate = date;
               });
             },
-            progress: _computeProgress(),
-            takenLabel: _computeTakenLabel(),
-            nextDoseLabel: _computeNextDoseLabel(),
+            progress: _computeProgress(_selectedDate ?? DateTime.now()),
+            takenLabel: _computeTakenLabel(_selectedDate ?? DateTime.now()),
+            nextDoseLabel: _computeNextDoseLabel(_selectedDate ?? DateTime.now()),
           ),
           const SizedBox(height: 24),
           if (_getMedicationsForSection('Sabah').isNotEmpty) ...[
@@ -174,10 +190,22 @@ class _MedicationScreenState extends State<MedicationScreen> {
               onToggle: (data) async {
                 final med = _savedMedications[data.parentIndex];
                 final docId = med['id'] as String;
-                final currentFlags = List<bool>.from(med['takenFlags'] as List);
-                currentFlags[data.doseIndex] = !currentFlags[data.doseIndex];
+                final dateKey = _dateKey(_selectedDate ?? DateTime.now());
                 
-                await _medicationService.updateMedication(docId, {'takenFlags': currentFlags});
+                final takenHistory = Map<String, dynamic>.from(med['takenHistory'] as Map? ?? {});
+                List<bool> flags;
+                
+                if (takenHistory.containsKey(dateKey)) {
+                  flags = List<bool>.from(takenHistory[dateKey] as List);
+                } else {
+                  final doseCount = (med['doseTimes'] as List).length;
+                  flags = List<bool>.filled(doseCount, false);
+                }
+                
+                flags[data.doseIndex] = !flags[data.doseIndex];
+                takenHistory[dateKey] = flags;
+                
+                await _medicationService.updateMedication(docId, {'takenHistory': takenHistory});
               },
               onMedicationTap: _navigateToMedicationDetail,
             ),
@@ -190,10 +218,22 @@ class _MedicationScreenState extends State<MedicationScreen> {
               onToggle: (data) async {
                 final med = _savedMedications[data.parentIndex];
                 final docId = med['id'] as String;
-                final currentFlags = List<bool>.from(med['takenFlags'] as List);
-                currentFlags[data.doseIndex] = !currentFlags[data.doseIndex];
+                final dateKey = _dateKey(_selectedDate ?? DateTime.now());
                 
-                await _medicationService.updateMedication(docId, {'takenFlags': currentFlags});
+                final takenHistory = Map<String, dynamic>.from(med['takenHistory'] as Map? ?? {});
+                List<bool> flags;
+                
+                if (takenHistory.containsKey(dateKey)) {
+                  flags = List<bool>.from(takenHistory[dateKey] as List);
+                } else {
+                  final doseCount = (med['doseTimes'] as List).length;
+                  flags = List<bool>.filled(doseCount, false);
+                }
+                
+                flags[data.doseIndex] = !flags[data.doseIndex];
+                takenHistory[dateKey] = flags;
+                
+                await _medicationService.updateMedication(docId, {'takenHistory': takenHistory});
               },
               onMedicationTap: _navigateToMedicationDetail,
             ),
@@ -222,10 +262,22 @@ class _MedicationScreenState extends State<MedicationScreen> {
               onToggle: (data) async {
                 final med = _savedMedications[data.parentIndex];
                 final docId = med['id'] as String;
-                final currentFlags = List<bool>.from(med['takenFlags'] as List);
-                currentFlags[data.doseIndex] = !currentFlags[data.doseIndex];
+                final dateKey = _dateKey(_selectedDate ?? DateTime.now());
                 
-                await _medicationService.updateMedication(docId, {'takenFlags': currentFlags});
+                final takenHistory = Map<String, dynamic>.from(med['takenHistory'] as Map? ?? {});
+                List<bool> flags;
+                
+                if (takenHistory.containsKey(dateKey)) {
+                  flags = List<bool>.from(takenHistory[dateKey] as List);
+                } else {
+                  final doseCount = (med['doseTimes'] as List).length;
+                  flags = List<bool>.filled(doseCount, false);
+                }
+                
+                flags[data.doseIndex] = !flags[data.doseIndex];
+                takenHistory[dateKey] = flags;
+                
+                await _medicationService.updateMedication(docId, {'takenHistory': takenHistory});
               },
               onMedicationTap: _navigateToMedicationDetail,
             ),
@@ -263,62 +315,128 @@ class _MedicationScreenState extends State<MedicationScreen> {
     );
   }
 
-  double _computeProgress() {
+  double _computeProgress(DateTime date) {
     int total = 0;
     int taken = 0;
+    final dateKey = _dateKey(date);
+    
     for (final med in _savedMedications) {
-      final flags = med['takenFlags'] as List?;
+      final doseAmounts = med['doseAmounts'] as List?;
+      if (doseAmounts == null) continue;
+      
+      // Tarih filtrelemesi (sadece o gün geçerli olan ilaçları say)
+      final DateTime? startDate = med['startDate'] != null ? med['startDate'] as DateTime : null;
+      final DateTime? endDate = med['endDate'] != null ? med['endDate'] as DateTime : null;
+      final selectedDateOnly = DateTime(date.year, date.month, date.day);
+      
+      if (startDate != null) {
+        final startDateOnly = DateTime(startDate.year, startDate.month, startDate.day);
+        if (selectedDateOnly.isBefore(startDateOnly)) continue;
+      }
+      if (endDate != null) {
+        final endDateOnly = DateTime(endDate.year, endDate.month, endDate.day);
+        if (selectedDateOnly.isAfter(endDateOnly)) continue;
+      }
+
+      total += doseAmounts.length;
+      
+      final takenHistory = med['takenHistory'] as Map<String, dynamic>? ?? {};
+      final flags = takenHistory[dateKey] as List?;
+      
       if (flags != null) {
-        total += flags.length;
         for (final f in flags) {
           if (f == true) taken++;
         }
-      } else {
-        final amounts = med['doseAmounts'] as List?;
-        if (amounts != null) total += amounts.length;
+      } else if (dateKey == _dateKey(DateTime.now()) && med['takenFlags'] != null) {
+        final legacyFlags = med['takenFlags'] as List;
+        for (final f in legacyFlags) {
+          if (f == true) taken++;
+        }
       }
     }
     if (total == 0) return 0.0;
     return taken / total;
   }
 
-  String _computeTakenLabel() {
+  String _computeTakenLabel(DateTime date) {
     int total = 0;
     int taken = 0;
+    final dateKey = _dateKey(date);
+    
     for (final med in _savedMedications) {
-      final flags = med['takenFlags'] as List?;
+      final doseAmounts = med['doseAmounts'] as List?;
+      if (doseAmounts == null) continue;
+
+      // Tarih filtrelemesi
+      final DateTime? startDate = med['startDate'] != null ? med['startDate'] as DateTime : null;
+      final DateTime? endDate = med['endDate'] != null ? med['endDate'] as DateTime : null;
+      final selectedDateOnly = DateTime(date.year, date.month, date.day);
+      
+      if (startDate != null) {
+        final startDateOnly = DateTime(startDate.year, startDate.month, startDate.day);
+        if (selectedDateOnly.isBefore(startDateOnly)) continue;
+      }
+      if (endDate != null) {
+        final endDateOnly = DateTime(endDate.year, endDate.month, endDate.day);
+        if (selectedDateOnly.isAfter(endDateOnly)) continue;
+      }
+
+      total += doseAmounts.length;
+      final takenHistory = med['takenHistory'] as Map<String, dynamic>? ?? {};
+      final flags = takenHistory[dateKey] as List?;
+      
       if (flags != null) {
-        total += flags.length;
         for (final f in flags) {
           if (f == true) taken++;
         }
-      } else {
-        final amounts = med['doseAmounts'] as List?;
-        if (amounts != null) total += amounts.length;
+      } else if (dateKey == _dateKey(DateTime.now()) && med['takenFlags'] != null) {
+        final legacyFlags = med['takenFlags'] as List;
+        for (final f in legacyFlags) {
+          if (f == true) taken++;
+        }
       }
     }
     return '$taken/$total İlaç Alındı';
   }
 
-  String _computeNextDoseLabel() {
+  String _computeNextDoseLabel(DateTime date) {
     int total = 0;
     int taken = 0;
     TimeOfDay? nextUntakenTime;
+    final dateKey = _dateKey(date);
     
-    // Tüm ilaçlardan saatler ve taken durumunu kontrol et
     for (final med in _savedMedications) {
+      // Tarih filtrelemesi
+      final DateTime? startDate = med['startDate'] != null ? med['startDate'] as DateTime : null;
+      final DateTime? endDate = med['endDate'] != null ? med['endDate'] as DateTime : null;
+      final selectedDateOnly = DateTime(date.year, date.month, date.day);
+      
+      if (startDate != null) {
+        final startDateOnly = DateTime(startDate.year, startDate.month, startDate.day);
+        if (selectedDateOnly.isBefore(startDateOnly)) continue;
+      }
+      if (endDate != null) {
+        final endDateOnly = DateTime(endDate.year, endDate.month, endDate.day);
+        if (selectedDateOnly.isAfter(endDateOnly)) continue;
+      }
+
       final doseTimes = med['doseTimes'] as List<TimeOfDay>?;
-      final flags = med['takenFlags'] as List?;
+      final takenHistory = med['takenHistory'] as Map<String, dynamic>? ?? {};
+      final flags = takenHistory[dateKey] as List?;
       
       if (doseTimes != null) {
         for (int i = 0; i < doseTimes.length; i++) {
-          final isTaken = flags != null && i < flags.length ? flags[i] == true : false;
+          bool isTaken = false;
+          if (flags != null && i < flags.length) {
+            isTaken = flags[i] == true;
+          } else if (dateKey == _dateKey(DateTime.now()) && med['takenFlags'] != null && i < (med['takenFlags'] as List).length) {
+            isTaken = (med['takenFlags'] as List)[i] == true;
+          }
+
           total++;
-          
           if (isTaken) {
             taken++;
           } else {
-            // Alınmamış ilaç — en yakın saati bul
             final time = doseTimes[i];
             if (nextUntakenTime == null || 
                 time.hour < nextUntakenTime.hour ||
@@ -330,17 +448,10 @@ class _MedicationScreenState extends State<MedicationScreen> {
       }
     }
     
-    // Case 1: Hiç ilaç alınmadı
-    if (taken == 0) {
-      return 'Hiç İlaç Alınmadı';
-    }
+    if (taken == 0 && total > 0) return 'Hiç İlaç Alınmadı';
+    if (total == 0) return 'İlaç Planlanmadı';
+    if (taken == total) return 'Tüm İlaçlar Alındı';
     
-    // Case 2: Tüm ilaçlar alındı
-    if (taken == total) {
-      return 'Tüm İlaçlar Alındı';
-    }
-    
-    // Case 3: Sonraki alınmamış ilaç saati
     if (nextUntakenTime != null) {
       final timeStr = '${nextUntakenTime.hour.toString().padLeft(2, '0')}:${nextUntakenTime.minute.toString().padLeft(2, '0')}';
       return "Sonraki doz: $timeStr'de";
