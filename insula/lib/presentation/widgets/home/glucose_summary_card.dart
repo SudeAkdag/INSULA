@@ -199,9 +199,10 @@ class GlucoseSummaryCard extends StatelessWidget {
                                       Positioned(
                                         left: arrowLeft,
                                         child: CustomPaint(
-                                          size: const Size(arrowSize, arrowSize),
-                                          painter:
-                                              _DownArrowPainter(color: arrowColor),
+                                          size:
+                                              const Size(arrowSize, arrowSize),
+                                          painter: _DownArrowPainter(
+                                              color: arrowColor),
                                         ),
                                       ),
                                   ],
@@ -216,7 +217,7 @@ class GlucoseSummaryCard extends StatelessWidget {
                                   gradient: const LinearGradient(
                                     colors: [
                                       AppColors.tertiary, // Orange
-                                      AppColors.primary,  // Yellow
+                                      AppColors.primary, // Yellow
                                       AppColors.secondary, // Teal (Target)
                                       AppColors.primary,
                                       AppColors.tertiary,

@@ -41,6 +41,17 @@ class SleepTrackingCard extends StatelessWidget {
               }
             }
 
+            // 1. Saat ve dakikayı ayrı ayrı hesapla
+            final int hours = todayTotalMinutes ~/
+                60; // (Tam sayı bölmesi - sadece saati alır)
+            final int minutes =
+                todayTotalMinutes % 60; // (Mod alma - arta kalan dakikayı alır)
+
+// 2. Çift haneli görünmesi için formatla (Örn: 9.05 veya 9.35)
+            final String formattedSleepTime =
+                "$hours.${minutes.toString().padLeft(2, '0')}";
+
+// progressValue hesabını bozmamak için ondalıklı hesaplamayı tutmaya devam et
             final double todayTotalHours = todayTotalMinutes / 60.0;
             final double progressValue =
                 (todayTotalHours / targetHours).clamp(0.0, 1.0);
@@ -90,8 +101,9 @@ class SleepTrackingCard extends StatelessWidget {
                               textBaseline: TextBaseline.alphabetic,
                               children: [
                                 // Dinamik Uyunan / Hedef Saati
+
                                 Text(
-                                  "${todayTotalHours.toStringAsFixed(1)} / ${targetHours.toInt()}",
+                                  "$formattedSleepTime / ${targetHours.toInt()}",
                                   style: AppTextStyles.h1.copyWith(
                                       color: AppColors.primaryDark,
                                       fontSize: 36),
