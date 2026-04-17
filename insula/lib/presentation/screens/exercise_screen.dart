@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:insula/presentation/screens/add_exercise_screen.dart'; 
 import 'package:insula/presentation/screens/exercise_history_screen.dart';
 import 'package:insula/data/services/exercise_service.dart';
+import 'package:insula/presentation/widgets/exercise/exercise_comparison_text.dart';
+import 'package:insula/presentation/widgets/exercise/monday_motivation_card.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/exercise_model.dart';
 import '../widgets/exercise/exercise_summary_card.dart';
@@ -27,48 +29,81 @@ class ExerciseScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: StreamBuilder<List<ExerciseModel>>(
+   body: StreamBuilder<List<ExerciseModel>>(
         stream: _exerciseService.getExercises(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Bağlantı Hatası: ${snapshot.error}"));
-          }
+  if (snapshot.connectionState == ConnectionState.waiting) {
+    return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+  }
+  if (snapshot.hasError) {
+    return Center(child: Text("Bağlantı Hatası: ${snapshot.error}"));
+  }
 
-          // 1. ANLIK VERİ HESAPLAMA
-          final now = DateTime.now();
-          final allExercises = snapshot.data ?? [];
+  // 1. TEMEL VERİLER VE BUGÜNÜN HESAPLANMASI
+  final now = DateTime.now();
+  final allExercises = snapshot.data ?? [];
+  
+  final todayActivities = allExercises.where((ex) => 
+    ex.date.year == now.year && 
+    ex.date.month == now.month && 
+    ex.date.day == now.day
+  ).toList();
+
+  int totalCalories = 0;
+  int totalMinutes = 0;
+  bool hasHigh = false;
+  bool hasMedium = false;
+
+  for (var ex in todayActivities) {
+    if (ex.isCompleted) {
+      totalCalories += ex.estimatedCalories;
+      totalMinutes += ex.durationMinutes;
+      String level = ex.intensityLevel.toLowerCase();
+      if (level.contains("yüksek")) hasHigh = true;
+      else if (level.contains("orta")) hasMedium = true;
+    }
+  }
+
+  // 2. HAFTALIK VERİ KONTROLÜ (Pazartesi'den bugüne kadar veri var mı?)
+  final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+  final mondayOfThisWeek = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+
+  final thisWeekExercises = allExercises.where((ex) => 
+    ex.date.isAfter(mondayOfThisWeek.subtract(const Duration(seconds: 1))) && 
+    ex.isCompleted
+  ).toList();
+
+  bool hasAnyDataThisWeek = thisWeekExercises.isNotEmpty;
+
+  // 3. DÜNÜN VERİSİNİN HESAPLANMASI (Kıyaslama için)
+  final yesterdayDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+  
+  final yesterdayExercises = allExercises.where((ex) => 
+    ex.date.year == yesterdayDate.year && 
+    ex.date.month == yesterdayDate.month && 
+    ex.date.day == yesterdayDate.day &&
+    ex.isCompleted
+  ).toList();
+
+  int yesterdayTotalCalories = 0;
+  bool hasYesterdayData = yesterdayExercises.isNotEmpty;
+
+  if (hasYesterdayData) {
+    for (var ex in yesterdayExercises) {
+      yesterdayTotalCalories += ex.estimatedCalories;
+    }
+  }
+
+  int calorieDifference = hasYesterdayData ? (totalCalories - yesterdayTotalCalories) : 0;
+
+
+  // Dinamik Yoğunluk Metni
+  String intensity = "---";
+  if (hasHigh) intensity = "Yüksek";
+  else if (hasMedium) intensity = "Orta";
+  else if (todayActivities.isNotEmpty) intensity = "Düşük";
+          // Dinamik Yoğunluk Metni
           
-          // Bugünün egzersizlerini filtrele
-          final todayActivities = allExercises.where((ex) => 
-            ex.date.year == now.year && 
-            ex.date.month == now.month && 
-            ex.date.day == now.day
-          ).toList();
-
-          int totalCalories = 0;
-          int totalMinutes = 0;
-          bool hasHigh = false;
-          bool hasMedium = false;
-
-          for (var ex in todayActivities) {
-            if (ex.isCompleted) {
-              totalCalories += ex.estimatedCalories;
-              totalMinutes += ex.durationMinutes;
-              // Yoğunluk kontrolü (Büyük/Küçük harf duyarsız)
-              String level = ex.intensityLevel.toLowerCase();
-              if (level.contains("yüksek")) hasHigh = true;
-              else if (level.contains("orta")) hasMedium = true;
-            }
-          }
-
-          String intensity = "---";
-          if (hasHigh) intensity = "Yüksek";
-          else if (hasMedium) intensity = "Orta";
-          else if (todayActivities.isNotEmpty) intensity = "Düşük";
-
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -104,11 +139,26 @@ class ExerciseScreen extends StatelessWidget {
                 
                 const SizedBox(height: 24),
                 // Grafiği de anlık güncellenecek yeni haliyle çağırıyoruz
-                const ExerciseChart(),
+                // ...
+const ExerciseChart(), // Grafik her zaman üstte durur
 
-                const SizedBox(height: 24),
-                const SugarWarningCard(),
-                
+if (now.weekday == DateTime.monday && totalCalories == 0) ...[
+  // SADECE Pazartesi VE henüz hiç veri girilmemişse motivasyon kartı
+  const MondayMotivationCard(),
+] else if (hasYesterdayData || (now.weekday == DateTime.monday && totalCalories > 0)) ...[
+  // 1. Pazartesi ilk veri girildiyse VEYA 
+  // 2. Diğer günlerde dünün verisi varsa kıyaslama metnini göster
+  const SizedBox(height: 12),
+  ExerciseComparisonText(difference: calorieDifference),
+] else ...[
+  // Hafta içi dün veri yoksa sayfa boş kalmasın diye yine motivasyon göster
+  const MondayMotivationCard(),
+],
+
+
+
+const SugarWarningCard(),
+// ...
                 const SizedBox(height: 24),
                 const Text(
                   "Bugünkü Hareketlerin", 
@@ -179,8 +229,8 @@ class ExerciseScreen extends StatelessWidget {
       child: const Column(
         children: [
           Icon(Icons.info_outline, color: Colors.grey),
-          const SizedBox(height: 8),
-          const Text(
+           SizedBox(height: 8),
+           Text(
             "Henüz bugün için bir egzersiz eklemediniz.", 
             style: TextStyle(color: Colors.grey, fontSize: 13)
           ),
@@ -219,3 +269,4 @@ class ExerciseScreen extends StatelessWidget {
     );
   }
 }
+

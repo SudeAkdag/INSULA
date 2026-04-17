@@ -6,6 +6,6 @@ class ChatMessage {
   ChatMessage({
     required this.text, 
     required this.isUser, 
-    DateTime? time
-  }) : this.time = time ?? DateTime.now();
+    DateTime? time, // Yerel parametre
+  }) : time = time ?? DateTime.now(); // 'this.' kaldırıldı
 }

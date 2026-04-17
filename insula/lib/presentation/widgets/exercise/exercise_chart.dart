@@ -4,6 +4,7 @@ import '../../../data/services/exercise_service.dart';
 import '../../../data/models/exercise_model.dart';
 
 class ExerciseChart extends StatelessWidget {
+  // constructor'daki zorunlu difference parametresini kaldırdım çünkü StreamBuilder zaten hesaplıyor.
   const ExerciseChart({super.key});
 
   @override
@@ -17,19 +18,31 @@ class ExerciseChart extends StatelessWidget {
       builder: (context, snapshot) {
         // 1. VERİYİ HAFTALIK KALORİ LİSTESİNE DÖNÜŞTÜR (Anlık)
         List<double> weeklyData = List.filled(7, 0.0);
+        double yesterdayCalories = 0.0; // Pzt günü için Pazar verisini tutacak
         
         if (snapshot.hasData) {
           // Bu haftanın Pazartesi gününü bul
           DateTime startOfWeek = DateTime(now.year, now.month, now.day)
               .subtract(Duration(days: now.weekday - 1));
+          
+          // Dünün tarihini bul (Kıyaslama için)
+          DateTime yesterdayDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
 
           for (var ex in snapshot.data!) {
-            // Sadece bu haftaya ait ve tamamlanmış olanları işle
+            // Grafik için haftalık veriyi doldur
             if (ex.isCompleted && ex.date.isAfter(startOfWeek.subtract(const Duration(seconds: 1)))) {
               int dayIdx = ex.date.weekday - 1;
               if (dayIdx >= 0 && dayIdx < 7) {
                 weeklyData[dayIdx] += ex.estimatedCalories.toDouble();
               }
+            }
+            
+            // Dünün toplam kalorisini bul (Pazartesi olsa bile dünü bulur)
+            if (ex.isCompleted && 
+                ex.date.year == yesterdayDate.year && 
+                ex.date.month == yesterdayDate.month && 
+                ex.date.day == yesterdayDate.day) {
+              yesterdayCalories += ex.estimatedCalories.toDouble();
             }
           }
         }
@@ -37,12 +50,15 @@ class ExerciseChart extends StatelessWidget {
         final bool hasData = weeklyData.any((value) => value > 0);
 
         String getDifference() {
-          if (todayIndex == 0 || weeklyData.isEmpty) return "0";
+          if (weeklyData.isEmpty) return "0";
           double todayVal = weeklyData[todayIndex];
-          double yesterdayVal = weeklyData[todayIndex - 1];
-          if (todayVal == 0) return "0"; 
-          double diff = todayVal - yesterdayVal;
-          return diff >= 0 ? "+${diff.toInt()}" : "${diff.toInt()}";
+          if (todayVal == 0) return "0";
+
+          // ARTIK Pzt kısıtlaması yok, alt kutu ne diyorsa bu da onu diyecek:
+          double diff = todayVal - yesterdayCalories;
+          
+          if (diff == 0) return "0";
+          return diff > 0 ? "+${diff.toInt()}" : "${diff.toInt()}";
         }
 
         return Column(
