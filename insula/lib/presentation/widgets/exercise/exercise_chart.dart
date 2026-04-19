@@ -4,44 +4,52 @@ import '../../../data/services/exercise_service.dart';
 import '../../../data/models/exercise_model.dart';
 
 class ExerciseChart extends StatelessWidget {
-  // constructor'daki zorunlu difference parametresini kaldırdım çünkü StreamBuilder zaten hesaplıyor.
   const ExerciseChart({super.key});
 
   @override
   Widget build(BuildContext context) {
     final List<String> days = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
     final DateTime now = DateTime.now();
-    final int todayIndex = now.weekday - 1; 
+    final int todayIndex = now.weekday - 1;
 
     return StreamBuilder<List<ExerciseModel>>(
       stream: ExerciseService().getExercises(),
       builder: (context, snapshot) {
-        // 1. VERİYİ HAFTALIK KALORİ LİSTESİNE DÖNÜŞTÜR (Anlık)
+        // 1. HAFTALIK VERİ LİSTESİ (Anlık)
         List<double> weeklyData = List.filled(7, 0.0);
-        double yesterdayCalories = 0.0; // Pzt günü için Pazar verisini tutacak
-        
+        double yesterdayCalories = 0.0;
+
         if (snapshot.hasData) {
-          // Bu haftanın Pazartesi gününü bul
-          DateTime startOfWeek = DateTime(now.year, now.month, now.day)
-              .subtract(Duration(days: now.weekday - 1));
-          
-          // Dünün tarihini bul (Kıyaslama için)
-          DateTime yesterdayDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+          // Bugünün başlangıcı (yerel saat olarak 00:00)
+          final todayStart = DateTime(now.year, now.month, now.day);
+
+          // Bu haftanın Pazartesi gününü bul (yerel saat olarak tam 00:00:00)
+          final startOfWeek =
+              todayStart.subtract(Duration(days: now.weekday - 1));
+
+          // Dünün tarihini bul (yerel saat olarak)
+          final yesterdayDate =
+              todayStart.subtract(const Duration(days: 1));
 
           for (var ex in snapshot.data!) {
-            // Grafik için haftalık veriyi doldur
-            if (ex.isCompleted && ex.date.isAfter(startOfWeek.subtract(const Duration(seconds: 1)))) {
-              int dayIdx = ex.date.weekday - 1;
+            if (!ex.isCompleted) continue;
+
+            // ✅ TUTARLI: Her zaman yerel tarih kullan
+            final localExDate = ex.localDate;
+            final exDayOnly = ex.dayOnly;
+
+            // A. Grafik için haftalık veriyi doldur (Pazartesi'den itibaren olanlar)
+            if (!exDayOnly.isBefore(startOfWeek)) {
+              int dayIdx = localExDate.weekday - 1;
               if (dayIdx >= 0 && dayIdx < 7) {
                 weeklyData[dayIdx] += ex.estimatedCalories.toDouble();
               }
             }
-            
-            // Dünün toplam kalorisini bul (Pazartesi olsa bile dünü bulur)
-            if (ex.isCompleted && 
-                ex.date.year == yesterdayDate.year && 
-                ex.date.month == yesterdayDate.month && 
-                ex.date.day == yesterdayDate.day) {
+
+            // B. Dünün toplam kalorisini bul (Tam gün kontrolü)
+            if (exDayOnly.year == yesterdayDate.year &&
+                exDayOnly.month == yesterdayDate.month &&
+                exDayOnly.day == yesterdayDate.day) {
               yesterdayCalories += ex.estimatedCalories.toDouble();
             }
           }
@@ -49,14 +57,14 @@ class ExerciseChart extends StatelessWidget {
 
         final bool hasData = weeklyData.any((value) => value > 0);
 
+        // Fark hesaplama mantığı (Alt kutuyla %100 uyumlu)
         String getDifference() {
           if (weeklyData.isEmpty) return "0";
           double todayVal = weeklyData[todayIndex];
           if (todayVal == 0) return "0";
 
-          // ARTIK Pzt kısıtlaması yok, alt kutu ne diyorsa bu da onu diyecek:
           double diff = todayVal - yesterdayCalories;
-          
+
           if (diff == 0) return "0";
           return diff > 0 ? "+${diff.toInt()}" : "${diff.toInt()}";
         }
@@ -77,7 +85,8 @@ class ExerciseChart extends StatelessWidget {
                 ),
                 if (hasData)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppColors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -85,7 +94,7 @@ class ExerciseChart extends StatelessWidget {
                     child: Text(
                       getDifference(),
                       style: const TextStyle(
-                        color: AppColors.secondary, 
+                        color: AppColors.secondary,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -94,59 +103,70 @@ class ExerciseChart extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: !hasData 
-                ? const SizedBox(
-                    height: 150, 
-                    child: Center(child: Text("Bu hafta henüz veri yok", style: TextStyle(color: Colors.grey, fontSize: 12)))
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: List.generate(7, (index) {
-                      double val = weeklyData[index];
-                      double maxVal = weeklyData.reduce((a, b) => a > b ? a : b);
-                      if (maxVal < 100) maxVal = 100;
+              child: !hasData
+                  ? const SizedBox(
+                      height: 150,
+                      child: Center(
+                          child: Text("Bu hafta henüz veri yok",
+                              style: TextStyle(
+                                  color: Colors.grey, fontSize: 12))),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: List.generate(7, (index) {
+                        double val = weeklyData[index];
+                        double maxVal =
+                            weeklyData.reduce((a, b) => a > b ? a : b);
+                        if (maxVal < 100) maxVal = 100;
 
-                      return Column(
-                        children: [
-                          Text(
-                            "${val.toInt()}",
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: index == todayIndex ? AppColors.secondary : AppColors.textSecLight,
+                        return Column(
+                          children: [
+                            Text(
+                              "${val.toInt()}",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: index == todayIndex
+                                    ? AppColors.secondary
+                                    : AppColors.textSecLight,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 500),
-                            width: 14,
-                            height: ((val / maxVal) * 100).clamp(4.0, 100.0), 
-                            decoration: BoxDecoration(
-                              color: index == todayIndex ? AppColors.secondary : AppColors.primary,
-                              borderRadius: BorderRadius.circular(8),
+                            const SizedBox(height: 4),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 500),
+                              width: 14,
+                              height: ((val / maxVal) * 100).clamp(4.0, 100.0),
+                              decoration: BoxDecoration(
+                                color: index == todayIndex
+                                    ? AppColors.secondary
+                                    : AppColors.primary,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            days[index],
-                            style: TextStyle(
-                              fontSize: 12, 
-                              color: index == todayIndex ? AppColors.secondary : AppColors.textSecLight,
-                              fontWeight: index == todayIndex ? FontWeight.bold : FontWeight.normal,
+                            const SizedBox(height: 8),
+                            Text(
+                              days[index],
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: index == todayIndex
+                                    ? AppColors.secondary
+                                    : AppColors.textSecLight,
+                                fontWeight: index == todayIndex
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
                             ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
+                          ],
+                        );
+                      }),
+                    ),
             ),
           ],
         );

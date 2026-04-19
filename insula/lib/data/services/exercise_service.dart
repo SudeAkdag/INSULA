@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/exercise_model.dart';
 
-
 class ExerciseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -25,12 +24,10 @@ class ExerciseService {
   }
 
   // 2. Mevcut Egzersizi Güncelleme
-  // ActiveTimerScreen bittiğinde dökümanı güncellemek için kullanılır.
   Future<void> updateExercise(ExerciseModel exercise) async {
     try {
       final String? uid = _auth.currentUser?.uid;
       if (uid == null) throw Exception("Kullanıcı girişi yapılmamış!");
-     
 
       await _firestore
           .collection('users')
@@ -38,7 +35,7 @@ class ExerciseService {
           .collection('exercises')
           .doc(exercise.id)
           .update(exercise.toMap());
-      
+
       debugPrint("Egzersiz başarıyla güncellendi.");
     } catch (e) {
       debugPrint("Firestore Güncelleme Hatası: $e");
@@ -46,183 +43,214 @@ class ExerciseService {
   }
 
   // 3. Kullanıcının Egzersizlerini Dinleme (Stream)
+  Stream<List<ExerciseModel>> getExercises() {
+    return _auth.authStateChanges().asyncExpand((user) {
+      if (user == null) {
+        return Stream.value([]);
+      }
 
- Stream<List<ExerciseModel>> getExercises() {
-  // authStateChanges() bir Stream'dir.
-  // asyncExpand, kullanıcı değiştiğinde eski dinlemeyi kapatıp yenisini açar.
-  return _auth.authStateChanges().asyncExpand((user) {
-    if (user == null) {
-      return Stream.value([]); // Kullanıcı yoksa boş liste dön.
-    }
+      return _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('exercises')
+          .orderBy('date', descending: true)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          return ExerciseModel.fromMap(doc.id, doc.data());
+        }).toList();
+      });
+    });
+  }
 
-    // Kullanıcı varsa o kullanıcıya ait koleksiyonu dinle.
-    return _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('exercises')
-        .orderBy('date', descending: true)
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return ExerciseModel.fromMap(doc.id, doc.data());
-          }).toList();
-        });
-  });
-}
-  // 4. Aylık İstatistikleri ve Karşılaştırmayı Hesaplama
-  Future<Map<String, dynamic>> getMonthlyComparison() async {
+Future<Map<String, dynamic>> getMonthlyComparison() async {
   final String? uid = _auth.currentUser?.uid;
-  if (uid == null) return {'count': 0, 'calories': 0, 'difference': 0.0};
+  if (uid == null) return {'count': 0, 'totalCalories': 0.0, 'difference': 0.0};
 
   final now = DateTime.now();
-  final startOfThisMonth = DateTime(now.year, now.month, 1);
-  final startOfLastMonth = DateTime(now.year, now.month - 1, 1);
-  final endOfLastMonth = DateTime(now.year, now.month, 1).subtract(const Duration(seconds: 1));
+  
+  // Ayın başlangıç ve bitiş tarihlerini netleştirelim
+  final firstDayThisMonth = DateTime(now.year, now.month, 1);
+  final firstDayNextMonth = DateTime(now.year, now.month + 1, 1);
+  final firstDayLastMonth = DateTime(now.year, now.month - 1, 1);
 
-  // Sorgular
-  final thisMonthSnap = await _firestore.collection('users').doc(uid).collection('exercises')
-      .where('date', isGreaterThanOrEqualTo: startOfThisMonth.toIso8601String()).get();
-
-  final lastMonthSnap = await _firestore.collection('users').doc(uid).collection('exercises')
-      .where('date', isGreaterThanOrEqualTo: startOfLastMonth.toIso8601String())
-      .where('date', isLessThanOrEqualTo: endOfLastMonth.toIso8601String()).get();
-
-  int thisMonthKcal = 0;
-  for (var doc in thisMonthSnap.docs) {
-    thisMonthKcal += (doc.data()['estimatedCalories'] as num? ?? 0).toInt();
-  }
-
-  int lastMonthKcal = 0;
-  for (var doc in lastMonthSnap.docs) {
-    lastMonthKcal += (doc.data()['estimatedCalories'] as num? ?? 0).toInt();
-  }
-
-  double kcalDiff = 0;
-  if (lastMonthKcal > 0) {
-    kcalDiff = ((thisMonthKcal - lastMonthKcal) / lastMonthKcal) * 100;
-  } else if (thisMonthKcal > 0) {
-    kcalDiff = 100.0; 
-  }
-
-  return {
-    'count': thisMonthSnap.docs.length,
-    'calories': thisMonthKcal,
-    'difference': kcalDiff,
-  };
-}
-
- // 5. Günlük Özet Verilerini Hesaplama (Düzeltilmiş)
- Future<Map<String, dynamic>> getTodayStats() async {
-    final String? uid = _auth.currentUser?.uid;
-    if (uid == null) return {'totalCalories': 0, 'totalMinutes': 0, 'intensity': "---", 'hasData': false};
-
-    final now = DateTime.now();
-    // Günü normalize et (saat/dakika farkından dolayı veri kaçırmamak için)
-    final todayStart = DateTime(now.year, now.month, now.day).toIso8601String();
-
-    final snapshot = await _firestore
+  try {
+    // 1. BU AYIN VERİLERİNİ ÇEK
+    final thisMonthSnap = await _firestore
         .collection('users')
         .doc(uid)
         .collection('exercises')
-        .where('date', isGreaterThanOrEqualTo: todayStart)
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(firstDayThisMonth))
+        .where('date', isLessThan: Timestamp.fromDate(firstDayNextMonth))
         .get();
 
-    int totalCalories = 0;
-    int totalMinutes = 0;
-    List<String> intensities = [];
+    double thisMonthKcal = 0.0;
+    int completedCount = 0;
 
-    for (var doc in snapshot.docs) {
+    for (var doc in thisMonthSnap.docs) {
       final data = doc.data();
+      // ÖNEMLİ: Eğer isCompleted filtresini sorguda yaparsan indeks isteyebilir.
+      // Şimdilik kod içinde kontrol etmek daha güvenli olabilir.
       if (data['isCompleted'] == true) {
-        totalCalories += (data['estimatedCalories'] as num? ?? 0).toInt();
-        totalMinutes += (data['durationMinutes'] as num? ?? 0).toInt();
-        
-        // Veriyi küçük harfe çevirerek ekle (karşılaştırmayı kolaylaştırır)
-        String level = (data['intensityLevel'] ?? "düşük").toString().toLowerCase();
-        intensities.add(level);
+        completedCount++;
+        // Veri tipini 'num' olarak alıp sonra double'a çevirmek en güvenlisidir.
+        final kcal = data['estimatedCalories'] as num? ?? 0;
+        thisMonthKcal += kcal.toDouble();
       }
     }
 
-    String dominantIntensity = "---";
-    
-    // Veritabanındaki "YÜKSEK YOĞUNLUK" veya "Yüksek" gibi tüm varyasyonları yakalar
-    if (intensities.any((e) => e.contains("yüksek"))) {
-      dominantIntensity = "Yüksek";
-    } else if (intensities.any((e) => e.contains("orta"))) {
-      dominantIntensity = "Orta";
-    } else if (intensities.isNotEmpty) {
-      dominantIntensity = "Düşük";
+    // 2. GEÇEN AYIN VERİLERİNİ ÇEK
+    final lastMonthSnap = await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('exercises')
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(firstDayLastMonth))
+        .where('date', isLessThan: Timestamp.fromDate(firstDayThisMonth))
+        .get();
+
+    double lastMonthKcal = 0.0;
+    for (var doc in lastMonthSnap.docs) {
+      final data = doc.data();
+      if (data['isCompleted'] == true) {
+        final kcal = data['estimatedCalories'] as num? ?? 0;
+        lastMonthKcal += kcal.toDouble();
+      }
+    }
+
+    // 3. FARKI HESAPLA
+    double kcalDiff = 0.0;
+    if (lastMonthKcal > 0) {
+      kcalDiff = ((thisMonthKcal - lastMonthKcal) / lastMonthKcal) * 100;
+    } else if (thisMonthKcal > 0) {
+      kcalDiff = 100.0;
     }
 
     return {
-      'totalCalories': totalCalories,
-      'totalMinutes': totalMinutes,
-      'intensity': dominantIntensity,
-      'hasData': intensities.isNotEmpty,
+      'count': completedCount,
+      'totalCalories': thisMonthKcal,
+      'difference': kcalDiff,
     };
- }
-
-  // 6. Haftalık Grafik Verilerini Çekme (Son 7 Gün)
-  // ExerciseService içindeki ilgili kısmı şu mantıkla güncelle:
-Future<List<double>> getWeeklyCalories() async {
-  final String? uid = _auth.currentUser?.uid;
-  if (uid == null) return List.filled(7, 0.0);
-
-  // 1. Her zaman 7 elemanlı ve içi 0 dolu bir liste ile başla
-  List<double> weeklyValues = List.filled(7, 0.0);
-
-  try {
-    final now = DateTime.now();
-    // Bu haftanın Pazartesi gününü bul
-    DateTime startOfWeek = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
-    
-    String startOfWeekStr = startOfWeek.toIso8601String();
-
-    final querySnapshot = await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('exercises')
-        .where('date', isGreaterThanOrEqualTo: startOfWeekStr)
-        .get();
-
-    for (var doc in querySnapshot.docs) {
-      final data = doc.data();
-      if (data['isCompleted'] == true) {
-        // 2. Kayıt tarihini parse et
-        DateTime recordDate = DateTime.parse(data['date']);
-        
-        // 3. DOĞRU İNDEKSİ HESAPLA: Pzt=1, Sal=2... Paz=7
-        // İndeks için 1 çıkarıyoruz (0-6 arası olması için)
-        int dayIndex = recordDate.weekday - 1;
-
-        if (dayIndex >= 0 && dayIndex < 7) {
-          // 4. Veriyi doğrudan o güne yaz, üstüne ekle (o gün birden fazla spor olabilir)
-          weeklyValues[dayIndex] += (data['estimatedCalories'] as num? ?? 0).toDouble();
-        }
-      }
-    }
   } catch (e) {
-    debugPrint("Hata: $e");
+    debugPrint("❌ Firestore Sorgu Hatası: $e");
+    return {'count': 0, 'totalCalories': 0.0, 'difference': 0.0};
   }
-  
-  return weeklyValues;
 }
 
+  // 5. Günlük Özet Verilerini Hesaplama (Stream)
+  Stream<Map<String, dynamic>> getTodayStatsStream() {
+    return _auth.authStateChanges().asyncExpand((user) {
+      if (user == null) {
+        return Stream.value({
+          'totalCalories': 0,
+          'totalMinutes': 0,
+          'intensity': "---",
+          'hasData': false
+        });
+      }
 
-// 7. Belirli Alanları Güncelleme (Düzenleme Pop-up'ı için)
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final tomorrowStart = todayStart.add(const Duration(days: 1));
+
+      return _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('exercises')
+          .where('date',
+              isGreaterThanOrEqualTo: todayStart.toUtc(),
+              isLessThan: tomorrowStart.toUtc())
+          .snapshots()
+          .map((snapshot) {
+        int totalCalories = 0;
+        int totalMinutes = 0;
+        List<String> intensities = [];
+
+        for (var doc in snapshot.docs) {
+          final data = doc.data();
+          if (data['isCompleted'] == true) {
+            totalCalories += (data['estimatedCalories'] as num? ?? 0).toInt();
+            totalMinutes += (data['durationMinutes'] as num? ?? 0).toInt();
+
+            String level =
+                (data['intensityLevel'] ?? "düşük").toString().toLowerCase();
+            intensities.add(level);
+          }
+        }
+
+        String dominantIntensity = "---";
+
+        if (intensities.any((e) => e.contains("yüksek"))) {
+          dominantIntensity = "Yüksek";
+        } else if (intensities.any((e) => e.contains("orta"))) {
+          dominantIntensity = "Orta";
+        } else if (intensities.isNotEmpty) {
+          dominantIntensity = "Düşük";
+        }
+
+        return {
+          'totalCalories': totalCalories,
+          'totalMinutes': totalMinutes,
+          'intensity': dominantIntensity,
+          'hasData': intensities.isNotEmpty,
+        };
+      });
+    });
+  }
+
+  // 6. Haftalık Grafik Verilerini Çekme (Stream)
+  Stream<List<double>> getWeeklyCaloriesStream() {
+    return _auth.authStateChanges().asyncExpand((user) {
+      if (user == null) {
+        return Stream.value(List.filled(7, 0.0));
+      }
+
+      final now = DateTime.now();
+      final startOfWeek =
+          DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+      final endOfWeek = startOfWeek.add(const Duration(days: 7));
+
+      return _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('exercises')
+          .where('date', isGreaterThanOrEqualTo: startOfWeek.toUtc())
+          .where('date', isLessThan: endOfWeek.toUtc())
+          .snapshots()
+          .map((snapshot) {
+        List<double> weeklyValues = List.filled(7, 0.0);
+
+        for (var doc in snapshot.docs) {
+          final data = doc.data();
+          if (data['isCompleted'] == true) {
+            // ✅ Tarih parse et ve yerel saate çevir
+            DateTime recordDate = DateTime.parse(data['date']).toLocal();
+
+            // ✅ Yerel tarihten günü al
+            int dayIndex = recordDate.weekday - 1;
+
+            if (dayIndex >= 0 && dayIndex < 7) {
+              weeklyValues[dayIndex] +=
+                  (data['estimatedCalories'] as num? ?? 0).toDouble();
+            }
+          }
+        }
+
+        return weeklyValues;
+      });
+    });
+  }
+
+  // 7. Belirli Alanları Güncelleme
   Future<void> updateExerciseFields({
-    required String id, 
-    required int duration, 
-    double? sugarBefore
+    required String id,
+    required int duration,
+    double? sugarBefore,
   }) async {
     try {
       final String? uid = _auth.currentUser?.uid;
       if (uid == null) throw Exception("Kullanıcı girişi yapılmamış!");
 
-      // Süre değiştiği için tahmini kaloriyi de yeniden hesaplayalım (Dakika başı ~7 kcal gibi genel bir kabulle)
-      // Eğer modelinde özel bir çarpan varsa onu da kullanabilirsin.
-      int newCalories = duration * 7; 
+      int newCalories = duration * 7;
 
       await _firestore
           .collection('users')
@@ -232,32 +260,101 @@ Future<List<double>> getWeeklyCalories() async {
           .update({
             'durationMinutes': duration,
             'glucoseBefore': sugarBefore,
-            'estimatedCalories': newCalories, // Süre uzarsa/kısalırsa kalori de güncellensin
+            'estimatedCalories': newCalories,
           });
-          
+
       debugPrint("Alanlar başarıyla güncellendi.");
     } catch (e) {
       debugPrint("Firestore Alan Güncelleme Hatası: $e");
     }
   }
 
-
+  // 8. Egzersiz Silme
   Future<void> deleteExercise(String docId) async {
-  try {
-    final String? uid = _auth.currentUser?.uid;
-    if (uid == null) return;
+    try {
+      final String? uid = _auth.currentUser?.uid;
+      if (uid == null) return;
 
-    // ÖNEMLİ: users -> UID -> exercises -> DOC_ID
-    await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('exercises')
-        .doc(docId) // Buradaki ID Firestore'daki otomatik ID olmalı
-        .delete();
-        
-    debugPrint("Firestore'dan silindi: $docId");
-  } catch (e) {
-    debugPrint("Silme hatası: $e");
+      await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('exercises')
+          .doc(docId)
+          .delete();
+
+      debugPrint("Firestore'dan silindi: $docId");
+    } catch (e) {
+      debugPrint("Silme hatası: $e");
+    }
   }
-}
+
+  // ✅ FutureBuilder ile çalışacak olan 'getTodayStats' metodu
+  Future<Map<String, dynamic>> getTodayStats() async {
+    final String? uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      return {
+        'totalCalories': 0.0,
+        'totalMinutes': 0,
+        'intensity': "---",
+        'hasData': false
+      };
+    }
+
+    // Bugünün başlangıcı ve sonu (UTC formatında Firestore sorgusu için)
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final tomorrowStart = todayStart.add(const Duration(days: 1));
+
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('exercises')
+          .where('date', isGreaterThanOrEqualTo: todayStart.toUtc().toIso8601String())
+          .where('date', isLessThan: tomorrowStart.toUtc().toIso8601String())
+          .get();
+
+      // ✅ Değişkenleri doğru tiplerle başlatıyoruz
+      double totalCalories = 0.0;
+      int totalMinutes = 0;
+      List<String> intensities = [];
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        
+        // Sadece tamamlanmış egzersizleri topluyoruz
+        if (data['isCompleted'] == true) {
+          // ✅ Veriyi num olarak alıp double'a güvenle çeviriyoruz
+          totalCalories += (data['estimatedCalories'] as num? ?? 0.0).toDouble();
+          totalMinutes += (data['durationMinutes'] as num? ?? 0).toInt();
+
+          if (data['intensityLevel'] != null) {
+            intensities.add(data['intensityLevel'].toString());
+          }
+        }
+      }
+
+      // En yüksek yoğunluğu belirleme mantığı
+      String dominantIntensity = "---";
+      if (intensities.any((e) => e.toUpperCase().contains("YÜKSEK"))) {
+        dominantIntensity = "Yüksek";
+      } else if (intensities.any((e) => e.toUpperCase().contains("ORTA"))) {
+        dominantIntensity = "Orta";
+      } else if (intensities.isNotEmpty) {
+        dominantIntensity = "Düşük";
+      }
+
+      // ✅ Map dönerken anahtarların doğruluğundan eminiz
+      return {
+        'totalCalories': totalCalories, // double
+        'totalMinutes': totalMinutes,   // int
+        'intensity': dominantIntensity,
+        'hasData': intensities.isNotEmpty,
+      };
+    } catch (e) {
+      debugPrint("getTodayStats Hatası: $e");
+      return {'totalCalories': 0.0, 'totalMinutes': 0, 'intensity': "---", 'hasData': false};
+    }
+  }
+  
 }

@@ -10,12 +10,19 @@ class HistorySummaryCard extends StatefulWidget {
 }
 
 class _HistorySummaryCardState extends State<HistorySummaryCard> {
+  // Future'ı burada tanımlamak, her build sırasında tekrar çalışmasını önler
   late Future<Map<String, dynamic>> _monthlyData;
 
   @override
   void initState() {
     super.initState();
-    _monthlyData = ExerciseService().getMonthlyComparison();
+    _refreshData();
+  }
+
+  void _refreshData() {
+    setState(() {
+      _monthlyData = ExerciseService().getMonthlyComparison();
+    });
   }
 
   @override
@@ -23,9 +30,19 @@ class _HistorySummaryCardState extends State<HistorySummaryCard> {
     return FutureBuilder<Map<String, dynamic>>(
       future: _monthlyData,
       builder: (context, snapshot) {
+        // Hata durumunu kontrol et
+        if (snapshot.hasError) {
+           return const Center(child: Text("Veri alınamadı"));
+        }
+
         final bool isLoading = snapshot.connectionState == ConnectionState.waiting;
-        final stats = snapshot.data ?? {'count': 0, 'calories': 0, 'difference': 0.0};
+        
+        // Veri geldiyse al, gelmediyse varsayılan değerleri kullan
+        final stats = snapshot.data ?? {'count': 0, 'totalCalories': 0.0, 'difference': 0.0};
+        
+        final double calories = (stats['totalCalories'] as num).toDouble();
         final double diff = (stats['difference'] as num).toDouble();
+        final int count = stats['count'] as int;
 
         return Container(
           padding: const EdgeInsets.all(20),
@@ -35,7 +52,7 @@ class _HistorySummaryCardState extends State<HistorySummaryCard> {
             border: Border.all(color: AppColors.backgroundLight),
             boxShadow: [
               BoxShadow(
-                color: AppColors.secondary.withValues(alpha: 0.05),
+                color: AppColors.secondary.withOpacity(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -51,39 +68,48 @@ class _HistorySummaryCardState extends State<HistorySummaryCard> {
                     "BU AY ÖZETİ",
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.secondary),
                   ),
-                  const Icon(Icons.calendar_month, color: AppColors.primary, size: 20),
+                  GestureDetector(
+                    onTap: _refreshData, // Dokununca veriyi yenileme özelliği
+                    child: const Icon(Icons.calendar_month, color: AppColors.primary, size: 20),
+                  ),
                 ],
               ),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStatItem("Egzersiz", isLoading ? "..." : "${stats['count']}"),
-                  _buildStatItem("Kalori", isLoading ? "..." : "${stats['calories']} kcal"),
+                  _buildStatItem("Egzersiz", isLoading ? "..." : "$count"),
+                  _buildStatItem(
+                    "Kalori", 
+                    isLoading ? "..." : "${calories.toStringAsFixed(1)} kcal"
+                  ),
                   
                   // Karşılaştırma Göstergesi
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text("Önceki Aya Göre", style: TextStyle(fontSize: 12, color: Color.fromARGB(255, 71, 71, 71))),
+                      const Text("Önceki Aya Göre", style: TextStyle(fontSize: 10, color: AppColors.textSecLight)),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            diff >= 0 ? Icons.trending_up : Icons.trending_down,
-                            color: diff >= 0 ? Colors.green : Colors.red,
-                            size: 14,
-                          ),
-                          Text(
-                            " %${diff.abs().toStringAsFixed(1)}",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                      if (isLoading)
+                        const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                      else
+                        Row(
+                          children: [
+                            Icon(
+                              diff >= 0 ? Icons.trending_up : Icons.trending_down,
                               color: diff >= 0 ? Colors.green : Colors.red,
+                              size: 16,
                             ),
-                          ),
-                        ],
-                      ),
+                            Text(
+                              " %${diff.abs().toStringAsFixed(1)}",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: diff >= 0 ? Colors.green : Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ],
@@ -95,14 +121,16 @@ class _HistorySummaryCardState extends State<HistorySummaryCard> {
     );
   }
 
+
   Widget _buildStatItem(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textSecLight)),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.secondary)),
+        Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary)),
       ],
     );
   }
 }
+

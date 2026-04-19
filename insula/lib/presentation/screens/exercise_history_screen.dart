@@ -174,7 +174,7 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
         icon: activityIcon, // İkonu buraya gönderiyoruz
         time: "${ex.date.day} ${_getMonthName(ex.date.month)}",
         duration: "${ex.durationMinutes} dk",
-        calories: "${ex.estimatedCalories} kcal",
+     calories: "${ex.estimatedCalories.toStringAsFixed(2)} kcal",
         glucoseBefore: ex.glucoseBefore?.toInt().toString(),
         glucoseAfter: ex.glucoseAfter?.toInt().toString(),
         isDecrease: diff <= 0,

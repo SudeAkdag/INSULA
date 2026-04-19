@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:insula/data/services/exercise_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -20,6 +22,7 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
   
   double _duration = 45;
   String _selectedActivity = "Yürüyüş";
+  double _userWeight = 70.0; // Varsayılan kilo, Firestore'dan güncellenecek
 
   final List<Map<String, dynamic>> _activities = [
     {"label": "Yürüyüş", "icon": Icons.directions_walk},
@@ -29,14 +32,48 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
     {"label": "Bisiklet", "icon": Icons.directions_bike},
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserWeight(); // Ekran açıldığında kullanıcının kilosunu getir
+  }
+
+bool _isLoadingWeight = true;
+  // Kullanıcının profilinden kilosunu çeken fonksiyon
+Future<void> _fetchUserWeight() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (mounted && doc.exists && doc.data()?['weight'] != null) {
+          setState(() {
+            _userWeight = (doc.data()?['weight'] as num).toDouble();
+            _isLoadingWeight = false; // Yükleme bitti
+          });
+        } else {
+          setState(() => _isLoadingWeight = false);
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingWeight = false);
+      debugPrint("Kilo çekme hatası: $e");
+    }
+  }
+
   // Firestore'a kayıt işlemini gerçekleştiren fonksiyon
   Future<void> _processSave() async {
     final newExercise = ExerciseModel(
+      id: '', // Firestore add() kullanacağı için boş
       activityName: _selectedActivity,
       durationMinutes: _duration.toInt(),
       glucoseBefore: double.tryParse(_glucoseController.text.trim()),
-      date: DateTime.now(),
-      isCompleted: false, id: '', // Yeni eklenen egzersiz henüz tamamlanmamıştır
+      date: DateTime.now().toUtc(),
+      isCompleted: false,
+      userWeight: _userWeight, // ✅ Profilden gelen güncel kilo
     );
 
     await _exerciseService.saveExercise(newExercise);
@@ -94,11 +131,13 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Sadece kalori ve yoğunluk gösterimi için geçici model
+    // Sadece kalori ve yoğunluk gösterimi için geçici model (Kilo burada kullanılıyor)
     final calcModel = ExerciseModel(
+      id: '',
       activityName: _selectedActivity,
       durationMinutes: _duration.toInt(),
-      date: DateTime.now(), id: '',
+      date: DateTime.now(),
+      userWeight: _userWeight, // ✅ Hesaplama kartı için güncel kilo
     );
 
     return Scaffold(
@@ -113,7 +152,10 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
+      body:
+      _isLoadingWeight 
+        ? const Center(child: CircularProgressIndicator()) // Kilo gelene kadar bekleme simgesi
+        : SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,9 +191,10 @@ class _AddExerciseScreenState extends State<AddExerciseScreen> {
 
             const SizedBox(height: 32),
 
+            // Kilo bilgisini alan güncel kalori özeti
             CalorieSummaryCard(
-              calories: calcModel.estimatedCalories,
-              intensity: calcModel.intensityLevel,
+             calories: calcModel.estimatedCalories,
+                intensity: calcModel.intensityLevel,
             ),
 
             const SizedBox(height: 40),

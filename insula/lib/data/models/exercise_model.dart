@@ -7,8 +7,12 @@ class ExerciseModel {
   final double? glucoseBefore;
   final double? glucoseAfter;
   final DateTime date;
-  final bool isCompleted; // Eklendi: Tamamlanma durumu
-  final DateTime? startTime; // Eklendi: Egzersizin gerçek başlama zamanı
+  final bool isCompleted;
+  final DateTime? startTime;
+  final double userWeight;
+  // ✅ EKSİK OLAN DEĞİŞKEN BURADAYDI:
+  final double estimatedCalories; 
+  final String intensityLevel;
 
   ExerciseModel({
     required this.id,
@@ -17,43 +21,59 @@ class ExerciseModel {
     this.glucoseBefore,
     this.glucoseAfter,
     required this.date,
-    this.isCompleted = false, // Varsayılan: Tamamlanmadı
+    this.isCompleted = false,
     this.startTime,
-  });
+    this.userWeight = 70.0,
+  })  : // ✅ Constructor içinde hesaplamaları yapıyoruz (Virgüllü double için .round() kaldırıldı)
+        estimatedCalories = _calculateCaloriesStatic(activityName, durationMinutes, userWeight),
+        intensityLevel = _calculateIntensityStatic(_calculateCaloriesStatic(activityName, durationMinutes, userWeight), durationMinutes);
 
-  // İkon belirleme mantığı
+  // ✅ HATA ÇÖZÜMÜ: localDate (UTC -> Local dönüşümü)
+  DateTime get localDate => date.toLocal();
+
+  // ✅ HATA ÇÖZÜMÜ: dayOnly (Sadece Takvim Günü)
+  DateTime get dayOnly => DateTime(localDate.year, localDate.month, localDate.day);
+
+  // ✅ activityIcon (İkon Belirleme)
   IconData get activityIcon {
-    switch (activityName) {
-      case "Koşu": return Icons.directions_run;
-      case "Ağırlık": return Icons.fitness_center;
-      case "Yoga": return Icons.self_improvement;
-      case "Bisiklet": return Icons.directions_bike;
-      case "Yüzme": return Icons.pool;
+    switch (activityName.toLowerCase()) {
+      case "koşu":
+      case "koşu (hızlı)": return Icons.directions_run;
+      case "ağırlık":
+      case "ağırlık antrenmanı": return Icons.fitness_center;
+      case "yoga":
+      case "pilates": return Icons.self_improvement;
+      case "bisiklet": return Icons.directions_bike;
+      case "yüzme": return Icons.pool;
+      case "yürüyüş": return Icons.directions_walk;
       default: return Icons.directions_walk;
     }
   }
 
-  // Kalori hesabı
-  int get estimatedCalories {
-    double metValue;
-    switch (activityName) {
-      case "Koşu": metValue = 8.0; break;
-      case "Ağırlık": metValue = 5.0; break;
-      case "Bisiklet": metValue = 7.5; break;
-      case "Yoga": metValue = 3.0; break;
-      default: metValue = 3.5; break;
+  // ✅ Statik Kalori Hesaplayıcı (Virgüllü sonuç için double döner)
+  static double _calculateCaloriesStatic(String activity, int minutes, double weight) {
+    double met;
+    switch (activity.toLowerCase()) {
+      case "koşu": met = 9.8; break;
+      case "yürüyüş": met = 3.5; break;
+      case "bisiklet": met = 7.5; break;
+      case "ağırlık": met = 6.0; break;
+      case "yoga": met = 2.5; break;
+      default: met = 3.5;
     }
-    return ((metValue * 3.5 * 70) / 200 * durationMinutes).round();
+    return (met * weight * minutes) / 60.0;
   }
 
-  String get intensityLevel {
-    int calories = estimatedCalories;
-    if (calories < 100) return "DÜŞÜK YOĞUNLUK";
-    if (calories < 300) return "ORTA YOĞUNLUK";
-    return "YÜKSEK YOĞUNLUK";
+  // ✅ Statik Yoğunluk Hesaplayıcı
+  static String _calculateIntensityStatic(double calories, int minutes) {
+    if (minutes == 0) return "DÜŞÜK YOĞUNLUK";
+    double calPerMin = calories / minutes;
+    if (calPerMin >= 7.0) return "YÜKSEK YOĞUNLUK";
+    if (calPerMin >= 4.0) return "ORTA YOĞUNLUK";
+    return "DÜŞÜK YOĞUNLUK";
   }
 
-
+  // Veritabanına kayıt için
   Map<String, dynamic> toMap() {
     return {
       'activityName': activityName,
@@ -62,24 +82,23 @@ class ExerciseModel {
       'glucoseAfter': glucoseAfter,
       'date': date.toIso8601String(),
       'isCompleted': isCompleted,
-      'startTime': startTime?.toIso8601String(),
-      'estimatedCalories': estimatedCalories,
+      'userWeight': userWeight,
+      'estimatedCalories': estimatedCalories, // Artik eksik değil!
       'intensityLevel': intensityLevel,
     };
   }
 
+  // Veritabanından okumak için
   factory ExerciseModel.fromMap(String id, Map<String, dynamic> map) {
     return ExerciseModel(
       id: id,
       activityName: map['activityName'] ?? '',
-      // num kullanımı int ve double karmaşasını önler
       durationMinutes: (map['durationMinutes'] as num?)?.toInt() ?? 0,
       glucoseBefore: (map['glucoseBefore'] as num?)?.toDouble(),
       glucoseAfter: (map['glucoseAfter'] as num?)?.toDouble(),
-      // Tarih verisi string olarak saklandığı için parse edilir
-      date: map['date'] != null ? DateTime.parse(map['date']) : DateTime.now(),
+      date: map['date'] != null ? DateTime.parse(map['date']).toLocal() : DateTime.now(),
       isCompleted: map['isCompleted'] ?? false,
-      startTime: map['startTime'] != null ? DateTime.parse(map['startTime']) : null,
+      userWeight: (map['userWeight'] as num?)?.toDouble() ?? 70.0,
     );
   }
 }

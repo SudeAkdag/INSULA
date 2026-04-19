@@ -1,4 +1,3 @@
-// lib/presentation/screens/active_timer_screen.dart
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../core/theme/app_colors.dart';
@@ -31,6 +30,7 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
   late int _seconds;
   int _prepSeconds = 3;
   bool _isPreparing = true;
+  bool _isPaused = false; 
   Timer? _timer;
   final TextEditingController _sugarController = TextEditingController();
 
@@ -41,28 +41,54 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
     _startTimer();
   }
 
+  // Timer'ı başlatan veya duraklatıldıktan sonra devam ettiren fonksiyon
   void _startTimer() {
+    _timer?.cancel(); // Mevcut bir timer varsa önce onu temizle
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
+
       setState(() {
         if (_isPreparing) {
-          if (_prepSeconds > 0) _prepSeconds--;
-          else _isPreparing = false;
+          if (_prepSeconds > 0) {
+            _prepSeconds--;
+          } else {
+            _isPreparing = false;
+          }
         } else {
-          if (_seconds > 0) _seconds--;
-          else _timer?.cancel();
+          if (_seconds > 0) {
+            _seconds--;
+          } else {
+            _timer?.cancel();
+          }
         }
       });
+    });
+  }
+
+  // Durdurma ve Başlatma mantığı
+  void _togglePause() {
+    setState(() {
+      if (_isPaused) {
+        _isPaused = false;
+        _startTimer(); // Tekrar başlat
+      } else {
+        _isPaused = true;
+        _timer?.cancel(); // Timer'ı tamamen durdur
+      }
     });
   }
 
   Future<void> _saveAndExit() async {
     final double? postSugar = double.tryParse(_sugarController.text);
     
+    // Yapılan süre hesabı (Saniye bazında farkı dakikaya yuvarla)
+    int actualSeconds = (widget.targetMinutes * 60) - _seconds;
+    int actualMinutes = (actualSeconds / 60).ceil(); 
+
     ExerciseModel model = ExerciseModel(
       id: widget.exerciseId ?? '',
       activityName: widget.title,
-      durationMinutes: widget.targetMinutes,
+      durationMinutes: actualMinutes, 
       date: DateTime.now(),
       glucoseBefore: widget.initialSugar,
       glucoseAfter: postSugar,
@@ -78,8 +104,11 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
     if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  // Çarpı butonu ve Geri tuşu için: Kaydetmeden çıkar
   void _handleCancelAndExit() async {
+    String content = _isPaused 
+        ? "Egzersiz mola durumunda. Eğer şimdi çıkarsanız ilerlemeniz kaydedilmeyecek ve süre başa dönecektir."
+        : "Egzersiziniz tamamlanmamış sayılacak ve süreniz tekrar başlayacaktır. Çıkmak istediğinize emin misiniz?";
+
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -92,10 +121,7 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
             Text("Dikkat!", style: TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
           ],
         ),
-        content: const Text(
-          "Egzersiziniz tamamlanmamış sayılacak ve süreniz tekrar başlayacaktır. Çıkmak istediğinize emin misiniz?",
-          style: TextStyle(color: AppColors.textSecLight),
-        ),
+        content: Text(content, style: const TextStyle(color: AppColors.textSecLight)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -114,11 +140,10 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
     );
 
     if (confirm == true && mounted) {
-      Navigator.of(context).pop(); // Exercise screen'e geri döner
+      Navigator.of(context).pop(); 
     }
   }
 
-  // Alt butondaki "Bitir" aksiyonu: Kaydederek çıkar
   void _handleFinish() async {
     bool sugarEmpty = _sugarController.text.isEmpty;
     bool timeNotFinished = (_seconds > 0 && !_isPreparing);
@@ -130,9 +155,9 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
 
     String content = "";
     if (sugarEmpty && timeNotFinished) {
-      content = "Egzersiz süreniz henüz dolmadı ve şeker seviyenizi girmediniz. Bu şekilde bitirmek istiyor musunuz?";
+      content = "Egzersiz süreniz henüz dolmadı ve şeker seviyenizi girmediniz. Yapılan kısım kaydedilecektir. Bitirmek istiyor musunuz?";
     } else if (timeNotFinished) {
-      content = "Egzersiz süreniz henüz dolmadı. Bitirmek istediğinize emin misiniz?";
+      content = "Egzersiz süreniz henüz dolmadı. Yapılan süreyi kaydetmek ve bitirmek istediğinize emin misiniz?";
     } else if (sugarEmpty) {
       content = "Şeker seviyenizi girmediniz. İstatistiklerinizin doğru hesaplanması için girmeniz önerilir. Devam edilsin mi?";
     }
@@ -180,7 +205,7 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, r) { 
         if(didPop) return;
-        _handleCancelAndExit(); // Geri tuşu basıldığında iptal uyarısı ver
+        _handleCancelAndExit(); 
       },
       child: Scaffold(
         backgroundColor: AppColors.backgroundLight,
@@ -191,11 +216,12 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.close, color: AppColors.secondary), 
-            onPressed: _handleCancelAndExit // Çarpı basıldığında iptal uyarısı ver
+            onPressed: _handleCancelAndExit 
           ),
         ),
         body: Column(
           children: [
+            // Üst kısım: Sayaç ve giriş alanları
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -211,17 +237,40 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
                       seconds: _isPreparing ? _prepSeconds : _seconds,
                       progress: progressValue,
                     ),
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 30),
+                    // DURDURMA / DEVAM ET BUTONU
+                    if (!_isPreparing && _seconds > 0)
+                      GestureDetector(
+                        onTap: _togglePause,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded,
+                            color: AppColors.primary,
+                            size: 48,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 30), // Metin kutusunun üstündeki boşluk
                     PostExerciseSugarInput(controller: _sugarController),
+                    const SizedBox(height: 20), // Klavye açıldığında rahatlık sağlar
                   ],
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(30, 0, 30, 80),
-              child: StatusActionButton(
-                label: _seconds == 0 ? "Tamamladım" : "Egzersizi Bitir",
-                onPressed: _handleFinish, // Kayıt süreci buradan devam eder
+            // Alt kısım: Egzersizi Bitir butonu
+            // SafeArea kullanarak telefonun alt barına çarpmasını engelliyoruz
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(30, 0, 30, 30), // Alttan 30 birim boşluk
+                child: StatusActionButton(
+                  label: _seconds == 0 ? "Tamamladım" : "Egzersizi Bitir",
+                  onPressed: _handleFinish, 
+                ),
               ),
             ),
           ],
@@ -229,7 +278,6 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
       ),
     );
   }
-
   Widget _buildSafetyBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -254,5 +302,9 @@ class _ActiveTimerScreenState extends State<ActiveTimerScreen> {
   String _formatTime(int s) => '${(s~/60).toString().padLeft(2,'0')}:${(s%60).toString().padLeft(2,'0')}';
 
   @override
-  void dispose() { _timer?.cancel(); _sugarController.dispose(); super.dispose(); }
+  void dispose() { 
+    _timer?.cancel(); 
+    _sugarController.dispose(); 
+    super.dispose(); 
+  }
 }

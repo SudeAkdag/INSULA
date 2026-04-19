@@ -45,16 +45,18 @@ class _DailySummaryGridState extends State<DailySummaryGrid> {
           const SizedBox(height: 16),
 
           // Egzersiz verisini asenkron çekmek için FutureBuilder kullanıyoruz
-          FutureBuilder<Map<String, dynamic>>(
-            future: ExerciseService().getTodayStats(),
-            builder: (context, snapshot) {
-              int totalCalories = 0;
-              int totalMinutes = 0;
+         FutureBuilder<Map<String, dynamic>>(
+  future: ExerciseService().getTodayStats(),
+  builder: (context, snapshot) {
+    // ✅ Değişkenleri double yapıyoruz
+    double totalCalories = 0.0;
+    int totalMinutes = 0; // Dakika küsuratlı olabilir diyorsan double kalsın
 
-              if (snapshot.hasData && snapshot.data != null) {
-                totalCalories = snapshot.data!['totalCalories'] as int? ?? 0;
-                totalMinutes = snapshot.data!['totalMinutes'] as int? ?? 0;
-              }
+    if (snapshot.hasData && snapshot.data != null) {
+      // ✅ En güvenli dönüşüm yolu: 'as num' üzerinden gitmek
+      totalCalories = (snapshot.data!['totalCalories'] as num? ?? 0.0).toDouble();
+      totalMinutes = (snapshot.data!['totalMinutes'] as num? ?? 0.0).toInt();
+    }
 
               return Column(
                 children: [
@@ -97,7 +99,7 @@ class _DailySummaryGridState extends State<DailySummaryGrid> {
 
 // ─── 1. Egzersiz Kutusu ───────────────────────────────────────────────────
 class _ExerciseStatCard extends StatelessWidget {
-  final int totalCalories;
+  final double totalCalories;
   final int totalMinutes;
 
   const _ExerciseStatCard({
@@ -146,7 +148,7 @@ class _ExerciseStatCard extends StatelessWidget {
             text: TextSpan(
               children: [
                 TextSpan(
-                  text: "$totalCalories",
+                  text: totalCalories.toStringAsFixed(2),
                   style: AppTextStyles.h1.copyWith(fontSize: 22),
                 ),
                 TextSpan(

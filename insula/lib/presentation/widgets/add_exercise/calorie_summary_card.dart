@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart'; //
 
 class CalorieSummaryCard extends StatelessWidget {
-  final int calories;
+  final double calories;
   final String intensity;
 
   const CalorieSummaryCard({
@@ -49,7 +49,7 @@ class CalorieSummaryCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  "$calories kcal",
+                 "${calories.toStringAsFixed(2)} kcal",
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                   style: const TextStyle(
