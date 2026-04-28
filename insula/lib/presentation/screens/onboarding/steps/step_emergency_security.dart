@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:insula/core/theme/app_colors.dart';
 import 'package:insula/core/theme/app_constants.dart';
 import 'package:insula/core/theme/app_text_styles.dart';
@@ -26,6 +27,13 @@ class _StepEmergencySecurityState extends State<StepEmergencySecurity> {
   final _contactPhoneController = TextEditingController();
   bool? _hasSevereHypo;
 
+  String? _nameError;
+  String? _phoneError;
+
+  // Harf-only formatter (Türkçe)
+  static final _nameRegex =
+      RegExp(r'^[a-zA-ZçÇğĞıİöÖşŞüÜ]+(?: [a-zA-ZçÇğĞıİöÖşŞüÜ]+)*$');
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +59,56 @@ class _StepEmergencySecurityState extends State<StepEmergencySecurity> {
           : _contactPhoneController.text.trim(),
       hasSevereHypoglycemiaHistory: _hasSevereHypo,
     ));
+  }
+
+  void _validateContactName(String value) {
+    final trimmed = value.trim();
+    setState(() {
+      if (trimmed.isEmpty) {
+        _nameError = null; // İsteğe bağlı alan
+      } else if (!_nameRegex.hasMatch(trimmed)) {
+        _nameError = 'Lütfen yalnızca harf kullanın';
+      } else {
+        _nameError = null;
+      }
+    });
+  }
+
+  void _validatePhone(String value) {
+    final trimmed = value.trim();
+    setState(() {
+      if (trimmed.isEmpty) {
+        _phoneError = null; // İsteğe bağlı alan
+      } else if (trimmed.length < 10 || trimmed.length > 11) {
+        _phoneError = 'Telefon 10–11 haneli olmalıdır';
+      } else {
+        _phoneError = null;
+      }
+    });
+  }
+
+  // Hata widget'ı
+  Widget _errorText(String? error) {
+    if (error == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, top: 4),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, size: 13, color: Colors.red.shade600),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              error,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   bool get _canNext => _hasSevereHypo != null;
@@ -82,34 +140,56 @@ class _StepEmergencySecurityState extends State<StepEmergencySecurity> {
           OnboardingInputCard(
             icon: Icons.person_outline,
             label: 'Acil durum kişisi adı',
+            hasError: _nameError != null,
             child: TextField(
               controller: _contactNameController,
-              onChanged: (_) => _emit(),
+              inputFormatters: [
+                // Harf + boşluk izin ver
+                FilteringTextInputFormatter.allow(
+                    RegExp(r'[a-zA-ZçÇğĞıİöÖşŞüÜ ]')),
+                LengthLimitingTextInputFormatter(50),
+              ],
+              onChanged: (v) {
+                _validateContactName(v);
+                _emit();
+              },
               style: const TextStyle(fontSize: 18),
               decoration: const InputDecoration(
                 hintText: 'Ad Soyad',
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 16),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 16),
               ),
             ),
           ),
+          _errorText(_nameError),
           const SizedBox(height: AppSpacing.md),
 
           OnboardingInputCard(
             icon: Icons.phone_outlined,
             label: 'Acil durum telefonu',
+            hasError: _phoneError != null,
             child: TextField(
               controller: _contactPhoneController,
-              onChanged: (_) => _emit(),
+              onChanged: (v) {
+                _validatePhone(v);
+                _emit();
+              },
               keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(11),
+              ],
               style: const TextStyle(fontSize: 18),
               decoration: const InputDecoration(
                 hintText: '05XX XXX XX XX',
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 16),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 16),
               ),
             ),
           ),
+          _errorText(_phoneError),
 
           const SizedBox(height: AppSpacing.xl),
           Text(

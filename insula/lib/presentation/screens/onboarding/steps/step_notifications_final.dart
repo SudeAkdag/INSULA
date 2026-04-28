@@ -59,7 +59,65 @@ class _StepNotificationsFinalState extends State<StepNotificationsFinal> {
   bool get _canComplete {
     final p = _passwordController.text.trim();
     final c = _confirmPasswordController.text.trim();
-    return p.length >= 6 && p == c;
+    // En az 8 karakter, 1 büyük harf, 1 rakam
+    final hasMinLength = p.length >= 8;
+    final hasUppercase = p.contains(RegExp(r'[A-Z]'));
+    final hasDigit = p.contains(RegExp(r'[0-9]'));
+    return hasMinLength && hasUppercase && hasDigit && p == c;
+  }
+
+  // Şifre güç seviyesi (0=zayıf, 1=orta, 2=güçlü)
+  int get _passwordStrength {
+    final p = _passwordController.text.trim();
+    if (p.length < 8) return 0;
+    int score = 0;
+    if (p.contains(RegExp(r'[A-Z]'))) score++;
+    if (p.contains(RegExp(r'[0-9]'))) score++;
+    if (p.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'))) score++;
+    if (score >= 3) return 2;
+    if (score >= 1) return 1;
+    return 0;
+  }
+
+  String? get _passwordError {
+    final p = _passwordController.text.trim();
+    if (p.isEmpty) return null;
+    if (p.length < 8) return 'Şifre en az 8 karakter olmalıdır';
+    if (!p.contains(RegExp(r'[A-Z]'))) return 'En az 1 büyük harf içermelidir';
+    if (!p.contains(RegExp(r'[0-9]'))) return 'En az 1 rakam içermelidir';
+    return null;
+  }
+
+  String? get _confirmError {
+    final p = _passwordController.text.trim();
+    final c = _confirmPasswordController.text.trim();
+    if (c.isEmpty) return null;
+    if (p != c) return 'Şifreler eşleşmiyor';
+    return null;
+  }
+
+  // Yardımcı hata widget'ı
+  Widget _errorText(String? error) {
+    if (error == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, top: 4),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, size: 13, color: Colors.red.shade600),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              error,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -133,13 +191,16 @@ class _StepNotificationsFinalState extends State<StepNotificationsFinal> {
           const SizedBox(height: AppSpacing.sm),
           OnboardingInputCard(
             icon: Icons.lock_outline,
+            hasError: _passwordError != null,
             child: TextField(
               controller: _passwordController,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() {
+                _emit();
+              }),
               obscureText: _obscurePassword,
               style: const TextStyle(fontSize: 18),
               decoration: InputDecoration(
-                hintText: 'En az 6 karakter',
+                hintText: 'En az 8 karakter, 1 büyük harf, 1 rakam',
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md, vertical: 16),
@@ -156,9 +217,57 @@ class _StepNotificationsFinalState extends State<StepNotificationsFinal> {
               ),
             ),
           ),
+          // -- Şifre güç göstergesi --
+          Builder(builder: (context) {
+            final strength = _passwordStrength;
+            final p = _passwordController.text.trim();
+            final colors = [
+              Colors.red.shade400,
+              Colors.orange.shade400,
+              Colors.green.shade500,
+            ];
+            final labels = ['Zayıf', 'Orta', 'Güçlü'];
+            return p.isEmpty
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(left: 4, top: 6, bottom: 2),
+                    child: Row(
+                      children: [
+                        ...List.generate(3, (i) {
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 250),
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: i <= strength
+                                      ? colors[strength]
+                                      : Colors.grey.shade300,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                        const SizedBox(width: 8),
+                        Text(
+                          labels[strength],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colors[strength],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+          }),
+          _errorText(_passwordError),
           const SizedBox(height: AppSpacing.md),
           OnboardingInputCard(
             icon: Icons.lock_outline,
+            hasError: _confirmError != null,
             child: TextField(
               controller: _confirmPasswordController,
               onChanged: (_) => setState(() {}),
@@ -182,6 +291,7 @@ class _StepNotificationsFinalState extends State<StepNotificationsFinal> {
               ),
             ),
           ),
+          _errorText(_confirmError),
           const SizedBox(height: AppSpacing.xxl),
           SizedBox(
             height: 56,

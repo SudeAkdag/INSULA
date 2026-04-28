@@ -43,7 +43,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   Future<void> _completeOnboarding() async {
     final email = _data.email?.trim();
     final password = _data.password;
-    if (email == null || email.isEmpty || password == null || password.length < 6) {
+    if (email == null || email.isEmpty || password == null || password.length < 8) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Lütfen e-posta ve şifrenizi kontrol edin.')),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:insula/core/theme/app_colors.dart';
 import 'package:insula/core/theme/app_constants.dart';
 import 'package:insula/core/theme/app_text_styles.dart';
@@ -32,6 +33,7 @@ class _StepDiabetesProfileState extends State<StepDiabetesProfile> {
   String? _selectedType;
   final _yearController = TextEditingController();
   int? _diagnosisYear;
+  String? _yearError;
 
   @override
   void initState() {
@@ -56,12 +58,27 @@ class _StepDiabetesProfileState extends State<StepDiabetesProfile> {
     ));
   }
 
+  void _validateYear(String value) {
+    final trimmed = value.trim();
+    final year = int.tryParse(trimmed);
+    final now = DateTime.now().year;
+    setState(() {
+      if (trimmed.isEmpty) {
+        _yearError = 'Tanı yılı zorunludur';
+      } else if (year == null || year < 1920 || year > now) {
+        _yearError = 'Geçerli bir yıl girin (1920 – $now)';
+      } else {
+        _yearError = null;
+      }
+    });
+  }
+
   bool get _canNext {
     if (_selectedType == null) return false;
     final year = int.tryParse(_yearController.text.trim());
     if (year == null) return false;
     final now = DateTime.now().year;
-    return year >= 1920 && year <= now;
+    return year >= 1920 && year <= now && _yearError == null;
   }
 
   @override
@@ -110,13 +127,20 @@ class _StepDiabetesProfileState extends State<StepDiabetesProfile> {
             style: AppTextStyles.label.copyWith(fontSize: 15, color: AppColors.textMainLight),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Container(
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
+              color: _yearError != null ? Colors.red.shade50 : AppColors.surfaceLight,
               borderRadius: BorderRadius.circular(AppRadius.defaultRadius),
+              border: Border.all(
+                color: _yearError != null ? Colors.red.shade400 : Colors.transparent,
+                width: _yearError != null ? 1.5 : 0,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.secondary.withAlpha(15),
+                  color: _yearError != null
+                      ? Colors.red.withAlpha(20)
+                      : AppColors.secondary.withAlpha(15),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -125,22 +149,45 @@ class _StepDiabetesProfileState extends State<StepDiabetesProfile> {
             child: TextField(
               controller: _yearController,
               onChanged: (v) {
+                _validateYear(v);
                 setState(() {
                   _diagnosisYear = int.tryParse(v.trim());
                   _emit();
                 });
               },
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(4),
+              ],
               style: const TextStyle(fontSize: 18),
               decoration: InputDecoration(
                 hintText: 'Örn: ${DateTime.now().year - 5}',
-                prefixIcon: const Icon(Icons.calendar_today_outlined,
-                    color: AppColors.secondary),
+                prefixIcon: Icon(Icons.calendar_today_outlined,
+                    color: _yearError != null ? Colors.red.shade600 : AppColors.secondary),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 16),
               ),
             ),
           ),
+          if (_yearError != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, size: 13, color: Colors.red.shade600),
+                  const SizedBox(width: 4),
+                  Text(
+                    _yearError!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.red.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           const SizedBox(height: AppSpacing.xxl),
           SizedBox(
