@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:insula/data/services/exercise_service.dart';
 import 'package:insula/data/models/exercise_model.dart';
-import 'package:insula/presentation/widgets/exercise_history/history_activity_tile.dart';
-import 'package:insula/presentation/widgets/exercise_history/history_summary_card.dart';
+// Yeni widget'ını doğru dosyadan import ettiğinden emin ol:
+import 'package:insula/presentation/widgets/exercise_history/history_activity_tile.dart'; 
 import '../../../../core/theme/app_colors.dart';
 
 class ExerciseHistoryScreen extends StatefulWidget {
@@ -72,10 +72,17 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: HistorySummaryCard(),
+                // --- BURASI DEĞİŞTİ: Eski kart yerine yeni butonlu widget ve FutureBuilder geldi ---
+                FutureBuilder<Map<String, dynamic>>(
+                  future: _exerciseService.getMonthlyComparison(),
+                  builder: (context, summarySnapshot) {
+                    if (!summarySnapshot.hasData) return const SizedBox(height: 100);
+                    // Yeni yazdığımız class'ı burada çağırıyoruz:
+                    return MonthlySummaryCard(stats: summarySnapshot.data!);
+                  },
                 ),
+                // -----------------------------------------------------------------------------
+
                 _buildCategoryBar(),
                 const SizedBox(height: 16),
                 if (todayItems.isNotEmpty) ...[
@@ -106,6 +113,7 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
     );
   }
 
+  // ... Diğer yardımcı metodlar (_buildCategoryBar, _buildHistoryTile vb.) aynı kalacak
   Widget _buildCategoryBar() {
     return SizedBox(
       height: 45,
@@ -126,7 +134,7 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
                 color: isSelected ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.circular(25),
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.secondary.withValues(alpha: 0.2),
+                  color: isSelected ? AppColors.primary : AppColors.secondary.withOpacity(0.2),
                 ),
               ),
               child: Row(
@@ -152,17 +160,14 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
   }
 
   Widget _buildHistoryTile(ExerciseModel ex) {
-    // İKON BELİRLEME MANTIĞI
     IconData activityIcon;
     switch (ex.activityName) {
-      case 'Koşu':
-        activityIcon = Icons.directions_run;
-        break;
-      case 'Bisiklet':
-        activityIcon = Icons.directions_bike;
-        break;
-      default:
-        activityIcon = Icons.directions_walk;
+      case 'Koşu': activityIcon = Icons.directions_run; break;
+      case 'Bisiklet': activityIcon = Icons.directions_bike; break;
+      case 'Yürüyüş': activityIcon = Icons.directions_walk; break;
+      case 'Yoga': activityIcon = Icons.self_improvement; break;
+      case 'Ağırlık': activityIcon = Icons.fitness_center; break;
+      default: activityIcon = Icons.directions_walk;
     }
 
     double diff = (ex.glucoseAfter ?? 0) - (ex.glucoseBefore ?? 0);
@@ -171,10 +176,10 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: HistoryActivityTile(
         title: ex.activityName,
-        icon: activityIcon, // İkonu buraya gönderiyoruz
+        icon: activityIcon,
         time: "${ex.date.day} ${_getMonthName(ex.date.month)}",
         duration: "${ex.durationMinutes} dk",
-     calories: "${ex.estimatedCalories.toStringAsFixed(2)} kcal",
+        calories: "${ex.estimatedCalories.toStringAsFixed(2)} kcal",
         glucoseBefore: ex.glucoseBefore?.toInt().toString(),
         glucoseAfter: ex.glucoseAfter?.toInt().toString(),
         isDecrease: diff <= 0,
@@ -182,7 +187,6 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
     );
   }
 
-  // ... _isSameDay, _getMonthName, _buildSectionHeader metodları aynı kalacak
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),

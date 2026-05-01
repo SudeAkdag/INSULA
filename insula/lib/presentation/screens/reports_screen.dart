@@ -171,7 +171,8 @@ class _NutrientBar {
 // ── Ekran ────────────────────────────────────────────────────────────────────
 
 class ReportsScreen extends StatefulWidget {
-  const ReportsScreen({super.key});
+ final int initialTab;
+  const ReportsScreen({super.key, this.initialTab = 0});
   @override
   State<ReportsScreen> createState() => _ReportsScreenState();
 }
@@ -183,12 +184,17 @@ class _ReportsScreenState extends State<ReportsScreen>
   bool _isLoading = false;
   late TabController _tabController;
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _loadData();
-  }
+ @override
+void initState() {
+  super.initState();
+  // Dışarıdan gelen initialTab değerini başlangıç indeksi olarak atıyoruz
+  _tabController = TabController(
+    length: 4, 
+    vsync: this, 
+    initialIndex: widget.initialTab // Bu satırı ekle
+  );
+  _loadData();
+}
 
   @override
   void dispose() {

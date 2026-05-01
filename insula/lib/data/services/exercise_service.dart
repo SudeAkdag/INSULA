@@ -62,76 +62,73 @@ class ExerciseService {
       });
     });
   }
-
-Future<Map<String, dynamic>> getMonthlyComparison() async {
+  Future<Map<String, dynamic>> getMonthlyComparison() async {
   final String? uid = _auth.currentUser?.uid;
   if (uid == null) return {'count': 0, 'totalCalories': 0.0, 'difference': 0.0};
 
   final now = DateTime.now();
   
-  // Ayın başlangıç ve bitiş tarihlerini netleştirelim
-  final firstDayThisMonth = DateTime(now.year, now.month, 1);
-  final firstDayNextMonth = DateTime(now.year, now.month + 1, 1);
-  final firstDayLastMonth = DateTime(now.year, now.month - 1, 1);
+  // Veritabanındaki "2026-04-19..." formatıyla eşleşmesi için ISO String kullanıyoruz
+  // .split('T')[0] kullanarak sadece tarih kısmını (YYYY-MM-DD) karşılaştırmak en sağlıklısıdır
+  final String thisMonthPrefix = "${now.year}-${now.month.toString().padLeft(2, '0')}";
+  
+  // Geçen ayı hesapla
+  int lastMonth = now.month - 1;
+  int lastYear = now.year;
+  if (lastMonth == 0) {
+    lastMonth = 12;
+    lastYear -= 1;
+  }
+  final String lastMonthPrefix = "$lastYear-${lastMonth.toString().padLeft(2, '0')}";
 
   try {
-    // 1. BU AYIN VERİLERİNİ ÇEK
-    final thisMonthSnap = await _firestore
+    // Tüm egzersizleri çek (Küçük veri seti olduğu için filtreyi kod içinde yapmak daha hızlı ve hatasızdır)
+    final snapshot = await _firestore
         .collection('users')
         .doc(uid)
         .collection('exercises')
-        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(firstDayThisMonth))
-        .where('date', isLessThan: Timestamp.fromDate(firstDayNextMonth))
         .get();
 
     double thisMonthKcal = 0.0;
-    int completedCount = 0;
-
-    for (var doc in thisMonthSnap.docs) {
-      final data = doc.data();
-      // ÖNEMLİ: Eğer isCompleted filtresini sorguda yaparsan indeks isteyebilir.
-      // Şimdilik kod içinde kontrol etmek daha güvenli olabilir.
-      if (data['isCompleted'] == true) {
-        completedCount++;
-        // Veri tipini 'num' olarak alıp sonra double'a çevirmek en güvenlisidir.
-        final kcal = data['estimatedCalories'] as num? ?? 0;
-        thisMonthKcal += kcal.toDouble();
-      }
-    }
-
-    // 2. GEÇEN AYIN VERİLERİNİ ÇEK
-    final lastMonthSnap = await _firestore
-        .collection('users')
-        .doc(uid)
-        .collection('exercises')
-        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(firstDayLastMonth))
-        .where('date', isLessThan: Timestamp.fromDate(firstDayThisMonth))
-        .get();
-
+    int thisMonthCount = 0;
     double lastMonthKcal = 0.0;
-    for (var doc in lastMonthSnap.docs) {
+
+    for (var doc in snapshot.docs) {
       final data = doc.data();
-      if (data['isCompleted'] == true) {
-        final kcal = data['estimatedCalories'] as num? ?? 0;
-        lastMonthKcal += kcal.toDouble();
+      final String? dateStr = data['date'] as String?;
+      
+      if (dateStr != null) {
+        // Bu ayın verisi mi?
+        if (dateStr.startsWith(thisMonthPrefix)) {
+          if (data['isCompleted'] == true) {
+            thisMonthCount++;
+            thisMonthKcal += (data['estimatedCalories'] as num? ?? 0).toDouble();
+          }
+        } 
+        // Geçen ayın verisi mi?
+        else if (dateStr.startsWith(lastMonthPrefix)) {
+          if (data['isCompleted'] == true) {
+            lastMonthKcal += (data['estimatedCalories'] as num? ?? 0).toDouble();
+          }
+        }
       }
     }
 
-    // 3. FARKI HESAPLA
-    double kcalDiff = 0.0;
+    // Fark hesaplama
+    double diff = 0.0;
     if (lastMonthKcal > 0) {
-      kcalDiff = ((thisMonthKcal - lastMonthKcal) / lastMonthKcal) * 100;
+      diff = ((thisMonthKcal - lastMonthKcal) / lastMonthKcal) * 100;
     } else if (thisMonthKcal > 0) {
-      kcalDiff = 100.0;
+      diff = 100.0;
     }
 
     return {
-      'count': completedCount,
+      'count': thisMonthCount,
       'totalCalories': thisMonthKcal,
-      'difference': kcalDiff,
+      'difference': diff,
     };
   } catch (e) {
-    debugPrint("❌ Firestore Sorgu Hatası: $e");
+    debugPrint("❌ Ay Özeti Hatası: $e");
     return {'count': 0, 'totalCalories': 0.0, 'difference': 0.0};
   }
 }
