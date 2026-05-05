@@ -146,6 +146,11 @@ class FullReportData {
   final int glucoseInRangePercent;
   final int targetGlucoseMin, targetGlucoseMax;
   final int totalExerciseMinutes, totalExerciseCalories, exerciseDaysCount;
+  // Yeni: hipoglisemi / hiperglisemi sayıları
+  final int hypoCount;
+  final int hyperCount;
+  // Yeni: context bazında ölçüm sayıları
+  final Map<String, int> glucoseContextCounts;
   const FullReportData({
     required this.nutrition,
     required this.glucoseData,
@@ -158,6 +163,9 @@ class FullReportData {
     required this.totalExerciseMinutes,
     required this.totalExerciseCalories,
     required this.exerciseDaysCount,
+    this.hypoCount = 0,
+    this.hyperCount = 0,
+    this.glucoseContextCounts = const {},
   });
 }
 
@@ -361,6 +369,8 @@ void initState() {
       // ── Kan şekeri hesapla ──────────────────────────────────────────────
       final glucoseByDay = <String, List<double>>{};
       int inRange = 0, totalReadings = 0;
+      int hypoCount = 0, hyperCount = 0;
+      final contextCounts = <String, int>{};
       for (final doc in glucoseSnap.docs) {
         final d = doc.data() as Map<String, dynamic>;
         final ts = d['timestamp'];
@@ -371,7 +381,26 @@ void initState() {
         final val = (d['value'] as num?)?.toDouble() ?? 0;
         glucoseByDay.putIfAbsent(key, () => []).add(val);
         totalReadings++;
-        if (val >= targetMin && val <= targetMax) inRange++;
+        if (val >= targetMin && val <= targetMax) {
+          inRange++;
+        } else if (val < targetMin) {
+          hypoCount++;
+        } else {
+          hyperCount++;
+        }
+        // Context etiketini grupla (Açlık / Tokluk / Gece)
+        final rawCtx = ((d['context'] as String?) ?? '').trim();
+        final String ctxLabel;
+        if (rawCtx == 'Açlık' || rawCtx == 'Yemek öncesi') {
+          ctxLabel = 'Açlık';
+        } else if (rawCtx == 'Yemek sonrası') {
+          ctxLabel = 'Tokluk';
+        } else if (rawCtx == 'Gece') {
+          ctxLabel = 'Gece';
+        } else {
+          ctxLabel = rawCtx.isEmpty ? 'Genel' : rawCtx;
+        }
+        contextCounts[ctxLabel] = (contextCounts[ctxLabel] ?? 0) + 1;
       }
       final glucoseList = <DailyGlucose>[];
       double glucoseSum = 0;
@@ -471,6 +500,9 @@ void initState() {
             totalExerciseMinutes: totalExMins,
             totalExerciseCalories: totalExCal,
             exerciseDaysCount: exerciseDays,
+            hypoCount: hypoCount,
+            hyperCount: hyperCount,
+            glucoseContextCounts: contextCounts,
           );
           _isLoading = false;
         });
@@ -1002,12 +1034,30 @@ void initState() {
                       icon: Icons.track_changes_outlined)),
             ]),
             const SizedBox(height: 12),
+            Row(children: [
+              Expanded(
+                  child: _buildMetricCard(
+                      label: 'Toplam Ölçüm',
+                      value: '$totalMeasurements',
+                      unit: 'ölçüm',
+                      color: AppColors.primary,
+                      icon: Icons.format_list_numbered)),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: _buildMetricCard(
+                      label: 'Hipoglisemi',
+                      value: '${r.hypoCount}',
+                      unit: 'kez',
+                      color: Colors.orange.shade600,
+                      icon: Icons.arrow_downward_rounded)),
+            ]),
+            const SizedBox(height: 12),
             _buildMetricCard(
-                label: 'Toplam Ölçüm',
-                value: '$totalMeasurements',
-                unit: 'ölçüm',
-                color: AppColors.primary,
-                icon: Icons.format_list_numbered),
+                label: 'Hiperglisemi',
+                value: '${r.hyperCount}',
+                unit: 'kez',
+                color: Colors.red.shade400,
+                icon: Icons.arrow_upward_rounded),
           ]),
         ),
         const SizedBox(height: 16),
@@ -1084,8 +1134,113 @@ void initState() {
                 ))),
           ),
         const SizedBox(height: 16),
-        _insightCard(insights),
+        if (r.glucoseContextCounts.isNotEmpty)
+          _buildContextDistributionCard(r.glucoseContextCounts),
+        const SizedBox(height: 16),
+        _insightCard([
+          ...insights,
+          if (r.hypoCount > 0)
+            'Bu dönemde ${r.hypoCount} hipoglisemi (düşük kan şekeri) olayı tespit edildi. Doktorunuza danışmanız önerilir.',
+          if (r.hyperCount > 0)
+            'Bu dönemde ${r.hyperCount} hiperglisemi (yüksek kan şekeri) olayı tespit edildi. İnsülin / ilaç dozunuzu gözden geçirin.',
+          if (r.hypoCount == 0 && r.hyperCount == 0)
+            'Bu dönemde hiç hipoglisemi veya hiperglisemi olayı yaşanmadı. Harika kontrol!',
+        ]),
       ]),
+    );
+  }
+
+  /// Context dağılım kartı
+  Widget _buildContextDistributionCard(Map<String, int> counts) {
+    final total = counts.values.fold(0, (s, v) => s + v);
+    if (total == 0) return const SizedBox.shrink();
+
+    final contextColors = <String, Color>{
+      'Açlık': Colors.blue.shade400,
+      'Tokluk': Colors.green.shade400,
+      'Gece': Colors.indigo.shade400,
+      'Yemek öncesi': Colors.teal.shade400,
+      'Yemek sonrası': Colors.green.shade300,
+      'Egzersiz öncesi': Colors.orange.shade400,
+      'Egzersiz sonrası': Colors.deepOrange.shade400,
+      'Genel': AppColors.textSecLight,
+    };
+    final contextIcons = <String, IconData>{
+      'Açlık': Icons.no_food_rounded,
+      'Tokluk': Icons.restaurant_rounded,
+      'Gece': Icons.nightlight_round,
+      'Yemek öncesi': Icons.restaurant_menu_rounded,
+      'Yemek sonrası': Icons.restaurant_rounded,
+      'Egzersiz öncesi': Icons.directions_run_rounded,
+      'Egzersiz sonrası': Icons.fitness_center_rounded,
+      'Genel': Icons.more_horiz_rounded,
+    };
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.access_time_rounded,
+                color: AppColors.secondary, size: 18),
+            const SizedBox(width: 8),
+            Text('Ölçüm Zamanı Dağılımı',
+                style: AppTextStyles.h1.copyWith(fontSize: 15)),
+          ]),
+          const SizedBox(height: 16),
+          ...counts.entries.map((entry) {
+            final pct = entry.value / total;
+            final color =
+                contextColors[entry.key] ?? AppColors.secondary;
+            final icon =
+                contextIcons[entry.key] ?? Icons.circle_outlined;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(icon, size: 14, color: color),
+                      const SizedBox(width: 6),
+                      Expanded(
+                          child: Text(entry.key,
+                              style: AppTextStyles.label
+                                  .copyWith(fontWeight: FontWeight.w600))),
+                      Text(
+                          '${entry.value} ölçüm  (${(pct * 100).toStringAsFixed(0)}%)',
+                          style: AppTextStyles.label
+                              .copyWith(fontSize: 11, color: AppColors.textSecLight)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: pct,
+                      minHeight: 8,
+                      backgroundColor: color.withOpacity(0.12),
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 

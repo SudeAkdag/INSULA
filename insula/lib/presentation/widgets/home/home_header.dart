@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:insula/presentation/screens/emergency_screen.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../screens/profile_screen.dart';
 
 class HomeHeader extends StatefulWidget {
   const HomeHeader({super.key});
@@ -28,10 +29,15 @@ class _HomeHeaderState extends State<HomeHeader> {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) {
-        if (mounted) setState(() { _displayName = 'Kullanıcı'; _loaded = true; });
+        if (mounted)
+          setState(() {
+            _displayName = 'Kullanıcı';
+            _loaded = true;
+          });
         return;
       }
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       final name = (doc.data()?['fullName'] as String?)?.trim() ?? '';
       if (mounted) {
         setState(() {
@@ -40,7 +46,11 @@ class _HomeHeaderState extends State<HomeHeader> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() { _displayName = 'Kullanıcı'; _loaded = true; });
+      if (mounted)
+        setState(() {
+          _displayName = 'Kullanıcı';
+          _loaded = true;
+        });
     }
   }
 
@@ -69,13 +79,28 @@ class _HomeHeaderState extends State<HomeHeader> {
                     ),
                   ],
                 ),
-                child: ClipOval(
-                  child: Image.network(
-                    "https://lh3.googleusercontent.com/aida-public/AB6AXuDAESvp-Cz8XYs7PkZlDp53ygqp6KjZ4kAfTrFmvFR6nTTYmXYPrrlkqmlFGzZmqlrx6-uWsWQu6EUvkE5AxwEWgk5JGPzay8EWsByY98nt3ATu1W8GrAo7OLvlm67dvwezTHszbTFk6VdqTDW4puIEODx6QguO0iCcv_0zoqPPAhwjN9SzGMYPSXyQ6QGBv4DEV4UM_3LflcbPd3T7UrViNP2vY0k2dGsMEM9KC6FlUL19qFb81VgElf7vorL0kxrjOyxJKx8fKY",
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.person, color: AppColors.primary, size: 28);
-                    },
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ProfileScreen(),
+                      ),
+                    );
+                  },
+                  child: ClipOval(
+                    child: Image.network(
+                      "https://lh3.googleusercontent.com/...", // URL buraya gelecek
+                      width: 40, // Boyutlandırma eklemek stabilite sağlar
+                      height: 40,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.person,
+                          color: AppColors.primary,
+                          size: 28,
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
@@ -91,7 +116,8 @@ class _HomeHeaderState extends State<HomeHeader> {
                   _loaded
                       ? Text(
                           _displayName,
-                          style: AppTextStyles.h1.copyWith(fontSize: 16, height: 1.0),
+                          style: AppTextStyles.h1
+                              .copyWith(fontSize: 16, height: 1.0),
                         )
                       : Container(
                           width: 100,
