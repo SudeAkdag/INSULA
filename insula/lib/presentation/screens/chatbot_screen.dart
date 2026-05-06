@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '../../core/theme/app_colors.dart'; 
-import '../../data/models/chat_message_model.dart';
-import 'package:insula/data/services/azure_openai_service.dart';
+import '../../../core/theme/app_colors.dart'; 
+import '../../../data/models/chat_message_model.dart';
+import '../../../data/services/gemini_service.dart';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -14,7 +11,7 @@ class ChatbotScreen extends StatefulWidget {
 }
 
 class _ChatbotScreenState extends State<ChatbotScreen> {
-  late final AzureOpenAIService _aiService;
+  late final GeminiService _aiService; 
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
@@ -22,41 +19,30 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   @override
   void initState() {
     super.initState();
-    _aiService = AzureOpenAIService(
-      apiKey: dotenv.env['AZURE_OPENAI_KEY'] ?? '',
-      endpoint: dotenv.env['AZURE_OPENAI_ENDPOINT'] ?? '',
-      deploymentName: dotenv.env['AZURE_OPENAI_DEPLOYMENT_NAME'] ?? '',
-    );
+    // Gemini servisini başlatıyoruz
+    _aiService = GeminiService(); 
   }
 
-  // ... (Firebase veri çekme ve mesaj gönderme fonksiyonların aynı kalıyor)
-  Future<String> _fetchUserData() async {
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return "";
-      var sugarDoc = await FirebaseFirestore.instance.collection('users').doc(uid).collection('daily_data').orderBy('date', descending: true).limit(1).get();
-      var waterDoc = await FirebaseFirestore.instance.collection('users').doc(uid).collection('water_data').orderBy('date', descending: true).limit(1).get();
-      String dataSummary = "";
-      if (sugarDoc.docs.isNotEmpty) dataSummary += "Son Şeker: ${sugarDoc.docs.first['glucose']} mg/dL. ";
-      if (waterDoc.docs.isNotEmpty) dataSummary += "Bugünkü Su: ${waterDoc.docs.first['amount']} ml.";
-      return dataSummary.isEmpty ? "Henüz veri girilmemiş." : dataSummary;
-    } catch (e) {
-      return "Veri çekilemedi.";
-    }
-  }
-
+  // Veritabanı sınıfları hazır olana kadar bu fonksiyonu sade tuttuk
   void _sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
+    
     final userText = _controller.text;
+    
     setState(() {
+      // Kullanıcının mesajını listeye ekle
       _messages.insert(0, ChatMessage(text: userText, isUser: true));
       _isLoading = true;
     });
+    
     _controller.clear();
-    String healthData = await _fetchUserData();
-    final response = await _aiService.getAiResponse(userText, firebaseData: healthData);
+    
+    // ŞİMDİLİK: Sadece kullanıcı metnini gönderiyoruz, veritabanı okuması yapmıyoruz
+    final response = await _aiService.getAiResponse(userText);
+    
     if (mounted) {
       setState(() {
+        // AI'dan gelen cevabı listeye ekle
         _messages.insert(0, ChatMessage(text: response, isUser: false));
         _isLoading = false;
       });
@@ -66,22 +52,22 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Sayfa arka planı temiz beyaz
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           "Insula Asistan", 
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold) // Siyahlığı düzelttik
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
         ), 
         backgroundColor: AppColors.secondary,
-        iconTheme: const IconThemeData(color: Colors.white), // Geri butonu beyaz
+        iconTheme: const IconThemeData(color: Colors.white),
         elevation: 2,
       ),
-      body: SafeArea( // Telefonun alt barına yapışmasını engeller
+      body: SafeArea(
         child: Column(
           children: [
             Expanded(
               child: ListView.builder(
-                reverse: true,
+                reverse: true, // Mesajlar alttan yukarı doğru akar
                 padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
                 itemCount: _messages.length,
                 itemBuilder: (context, index) => _buildChatBubble(_messages[index]),
@@ -108,14 +94,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         padding: const EdgeInsets.all(14),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isUser ? AppColors.primary : AppColors.secondary,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            )
-          ],
+          color: isUser ? AppColors.primary : AppColors.secondary.withOpacity(0.2),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
@@ -126,8 +105,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         child: Text(
           message.text, 
           style: TextStyle(
-            color: isUser ? Colors.white : Colors.black87,
-            fontSize: 15,
+            color: isUser ? Colors.white : Colors.black87, 
+            fontSize: 15
           )
         ),
       ),
@@ -138,10 +117,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))
-        ],
+        color: Colors.white, 
+        border: Border(top: BorderSide(color: Colors.grey[200]!))
       ),
       child: Row(
         children: [
@@ -149,24 +126,22 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.grey[300]!),
+                color: Colors.grey[100], 
+                borderRadius: BorderRadius.circular(30)
               ),
               child: TextField(
                 controller: _controller,
+                onSubmitted: (_) => _sendMessage(), // Enter tuşu ile gönderim
                 decoration: const InputDecoration(
-                  hintText: "Bir şey sorun...",
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(color: Colors.grey),
+                  hintText: "Bir şey sorun...", 
+                  border: InputBorder.none
                 ),
               ),
             ),
           ),
           const SizedBox(width: 10),
-          CircleAvatar( // Butonun etrafı daha belirgin
+          CircleAvatar(
             backgroundColor: AppColors.primary,
-            radius: 24,
             child: IconButton(
               icon: const Icon(Icons.send_rounded, color: Colors.white),
               onPressed: _sendMessage,

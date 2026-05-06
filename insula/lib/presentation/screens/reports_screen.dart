@@ -1167,66 +1167,91 @@ void initState() {
           ]),
         ),
         const SizedBox(height: 16),
-        if (chartData.isNotEmpty)
-          _chartCard(
-            title: 'Günlük Yakılan Kalori',
-            child: SizedBox(
-                height: 190,
-                child: BarChart(BarChartData(
-                  maxY: maxBarY * 1.3,
-                  gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      getDrawingHorizontalLine: (_) => const FlLine(
-                          color: AppColors.backgroundLight, strokeWidth: 1)),
-                  borderData: FlBorderData(show: false),
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 24,
-                            interval: interval,
-                            getTitlesWidget: (v, _) {
-                              final i = v.toInt();
-                              if (i < 0 || i >= chartData.length)
-                                return const SizedBox.shrink();
-                              return Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(_fmtDate(chartData[i].date),
-                                      style: AppTextStyles.label
-                                          .copyWith(fontSize: 9)));
-                            })),
-                    leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 36,
-                            getTitlesWidget: (v, _) => Text('${v.toInt()}',
-                                style: AppTextStyles.label
-                                    .copyWith(fontSize: 9)))),
-                    topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  barGroups: chartData
-                      .asMap()
-                      .entries
-                      .map((e) => BarChartGroupData(x: e.key, barRods: [
-                            BarChartRodData(
-                              toY: e.value.totalCalories.toDouble(),
-                              color: AppColors.secondary,
-                              width: (280 / chartData.length).clamp(4.0, 28.0),
-                              borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(4)),
-                              backDrawRodData: BackgroundBarChartRodData(
-                                  show: true,
-                                  toY: maxBarY * 1.3,
-                                  color: AppColors.backgroundLight),
-                            ),
-                          ]))
-                      .toList(),
-                ))),
+        // ... (üstteki kartlar aynı kalabilir)
+
+if (chartData.isNotEmpty)
+  _chartCard(
+    title: 'Günlük Yakılan Kalori',
+    child: SizedBox(
+      height: 220, // Tarihlerin sığması için yüksekliği biraz artırdık
+      child: BarChart(
+        BarChartData(
+          maxY: maxBarY * 1.3,
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (value) => const FlLine(
+              color: AppColors.backgroundLight,
+              strokeWidth: 1,
+            ),
           ),
+          borderData: FlBorderData(show: false),
+          titlesData: FlTitlesData(
+            // ALT TARİH ETİKETLERİ
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40, // Tarihlerin dikey sığması için alan açtık
+                // Interval değerini veriye göre dinamik seçiyoruz
+                interval: chartData.length > 10 ? (chartData.length / 5) : 1, 
+              getTitlesWidget: (double v, TitleMeta meta) { // Meta parametresini ekledik
+  final i = v.toInt();
+  if (i < 0 || i >= chartData.length) return const SizedBox.shrink();
+  
+  return SideTitleWidget(
+    meta: meta, // axisSide yerine doğrudan meta objesini veriyoruz
+    space: 8,
+    child: Transform.rotate(
+      angle: -0.5,
+      child: Text(
+        _fmtDate(chartData[i].date),
+        style: AppTextStyles.label.copyWith(fontSize: 10),
+      ),
+    ),
+  );
+},
+              ),
+            ),
+            // SOL KALORİ ETİKETLERİ
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (v, meta) => Text(
+                  '${v.toInt()}',
+                  style: AppTextStyles.label.copyWith(fontSize: 10),
+                ),
+              ),
+            ),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          barGroups: chartData.asMap().entries.map((e) {
+            // Bar genişliğini dinamik hesapla
+            double barWidth = (MediaQuery.of(context).size.width / (chartData.length * 1.5)).clamp(4.0, 20.0);
+            
+            return BarChartGroupData(
+              x: e.key,
+              barRods: [
+                BarChartRodData(
+                  toY: e.value.totalCalories.toDouble(),
+                  color: AppColors.secondary,
+                  width: barWidth,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                  // Arka plan barları (isteğe bağlı, görseldeki gri alanlar)
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: true,
+                    toY: maxBarY * 1.3,
+                    color: AppColors.backgroundLight.withOpacity(0.5),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+    ),
+  ),
         const SizedBox(height: 16),
         _insightCard(insights),
       ]),

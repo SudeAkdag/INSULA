@@ -15,18 +15,15 @@ import 'presentation/screens/auth/profile_setup_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() async {
-  // 1. Flutter alt yapısını hazırla
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Chatbot API anahtarları için .env dosyasını yükle
+  // .env dosyasını yüklüyoruz
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
-    // .env dosyası yoksa veya hatalıysa terminalde bizi uyarsın
-    debugPrint("UYARI: .env dosyası yüklenemedi. Chatbot çalışmayabilir: $e");
+    debugPrint("UYARI: .env dosyası yüklenemedi: $e");
   }
 
-  // 3. Firebase'i başlat
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
