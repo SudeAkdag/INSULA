@@ -46,7 +46,7 @@ class AddMedicationFormCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       decoration: BoxDecoration(
         color: AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(_cardRadius),
@@ -80,7 +80,7 @@ class AddMedicationFormCard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: Colors.grey.shade300),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                   suffixIcon: const Icon(Icons.search, color: AppColors.accentTeal, size: 22),
                 ),
                 style: AppTextStyles.body,
@@ -103,7 +103,7 @@ class AddMedicationFormCard extends ConsumerWidget {
               child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
             ),
             emptyBuilder: (context) => Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
               child: Text("Sonuç bulunamadı!", style: AppTextStyles.body.copyWith(color: Colors.red)),
             ),
             debounceDuration: const Duration(milliseconds: 400),
