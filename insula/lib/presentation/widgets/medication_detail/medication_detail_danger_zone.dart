@@ -27,23 +27,6 @@ class MedicationDetailDangerZone extends StatelessWidget {
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: onArchive,
-              icon: const Icon(Icons.archive, size: 20),
-              label: const Text('İlacı Arşivle'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textSecLight,
-                side: BorderSide(color: Colors.grey.shade300),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
             child: TextButton.icon(
               onPressed: () => _showDeleteConfirmation(context),
               icon: const Icon(Icons.delete_outline, size: 20),

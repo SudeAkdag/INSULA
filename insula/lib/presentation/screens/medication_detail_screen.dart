@@ -83,9 +83,6 @@ class MedicationDetailScreen extends StatelessWidget {
           MedicationDetailNotesCard(notes: notes),
           MedicationDetailDangerZone(
             medicationName: name,
-            onArchive: () {
-              // TODO: İlacı arşivle
-            },
             onDelete: () {
               Navigator.pop(context, true); // true = deleted
             },
