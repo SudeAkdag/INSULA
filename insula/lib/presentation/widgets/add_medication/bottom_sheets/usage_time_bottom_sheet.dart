@@ -21,8 +21,9 @@ class UsageTimeBottomSheet extends StatefulWidget {
 
   static const List<UsageTimeOption> defaultOptions = [
     UsageTimeOption('Sabah', Icons.light_mode, Color(0xFFFFF8E1), AppColors.primary),
-    UsageTimeOption('Öğle', Icons.wb_sunny, Color(0xFFFFECB3), Color(0xFFFF9800)),
+    UsageTimeOption('Öğle', Icons.wb_sunny, Color(0xFFFFECB3), Color(0xFFFFA000)),
     UsageTimeOption('Akşam', Icons.nightlight_round, Color(0xFFE8EAF6), Color(0xFF5C6BC0)),
+    UsageTimeOption('Gece', Icons.bedtime, Color(0xFFEDE7F6), Color(0xFF7E57C2)),
   ];
 
   static const UsageTimeOption otherOption = UsageTimeOption('Diğer', Icons.add_circle_outline, Color(0xFFF3E5F5), Color(0xFF9C27B0));
@@ -270,8 +271,8 @@ class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
                                   color: AppColors.surfaceLight,
                                   borderRadius: BorderRadius.circular(18),
                                   border: Border.all(
-                                    color: ((_selected != 'Sabah' && _selected != 'Öğle' && _selected != 'Akşam') ? const Color(0xFFe6f4f6) : Colors.transparent),
-                                    width: ((_selected != 'Sabah' && _selected != 'Öğle' && _selected != 'Akşam') ? 1.5 : 0),
+                                    color: !UsageTimeBottomSheet.defaultOptions.any((o) => o.title == _selected) ? const Color(0xFFe6f4f6) : Colors.transparent,
+                                    width: !UsageTimeBottomSheet.defaultOptions.any((o) => o.title == _selected) ? 1.5 : 0,
                                   ),
                                   boxShadow: const [
                                     BoxShadow(
@@ -307,7 +308,7 @@ class _UsageTimeBottomSheetState extends State<UsageTimeBottomSheet> {
                                         ),
                                       ),
                                     ),
-                                    _buildRadio(_selected != 'Sabah' && _selected != 'Öğle' && _selected != 'Akşam'),
+                                    _buildRadio(!UsageTimeBottomSheet.defaultOptions.any((o) => o.title == _selected)),
                                   ],
                                 ),
                               ),
