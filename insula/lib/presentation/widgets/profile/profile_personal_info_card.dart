@@ -58,7 +58,7 @@ class ProfilePersonalInfoCard extends StatelessWidget {
                 emailController,
                 keyboard: TextInputType.emailAddress,
                 suffixIcon: Icons.email,
-                readOnly: true,
+                readOnly: false,
               ),
               const SizedBox(height: 8),
               Row(
