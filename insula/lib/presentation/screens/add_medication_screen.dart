@@ -98,10 +98,10 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
     final doseCount = _extractDoseCount(_frequency);
     _doseTimes = List.generate(
       doseCount,
-      (i) => TimeOfDay(hour: 8 + (i * 6), minute: 0),
+      (i) => TimeOfDay(hour: (8 + (i * 6)) % 24, minute: 0),
     );
     _doseAmounts = List.filled(doseCount, '1 Tablet');
-    _doseUsageTimes = List.filled(doseCount, 'Sabah');
+    _doseUsageTimes = List.generate(doseCount, (i) => _getUsageTimeForTime(_doseTimes[i]));
     _doseConditions = List.filled(doseCount, 'Aç Karnına');
   }
 
@@ -133,6 +133,18 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
       initialTime: initial,
     );
     if (picked != null) onPicked(picked);
+  }
+
+  String _getUsageTimeForTime(TimeOfDay time) {
+    if (time.hour >= 5 && time.hour < 12) {
+      return 'Sabah';
+    } else if (time.hour >= 12 && time.hour < 17) {
+      return 'Öğle';
+    } else if (time.hour >= 17 && time.hour < 22) {
+      return 'Akşam';
+    } else {
+      return 'Gece';
+    }
   }
 
   Future<void> _pickDate(DateTime? initial, void Function(DateTime) onPicked) async {
@@ -312,7 +324,10 @@ class _AddMedicationScreenState extends ConsumerState<AddMedicationScreen> {
                       title: '${index + 1}. DOZ',
                       time: _doseTimes[index],
                       onTimeTap: () => _pickTime(_doseTimes[index], (t) {
-                        setState(() => _doseTimes[index] = t);
+                        setState(() {
+                          _doseTimes[index] = t;
+                          _doseUsageTimes[index] = _getUsageTimeForTime(t);
+                        });
                       }),
                       amount: _doseAmounts[index],
                       usageTime: _doseUsageTimes[index],

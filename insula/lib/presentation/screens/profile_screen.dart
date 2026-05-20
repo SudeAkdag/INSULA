@@ -207,6 +207,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
+      // E-posta değişikliği kontrolü (Auth)
+      final newEmail = _emailCtrl.text.trim();
+      bool emailVerificationSent = false;
+      if (newEmail.isNotEmpty && newEmail != user.email) {
+        try {
+          await user.verifyBeforeUpdateEmail(newEmail);
+          emailVerificationSent = true;
+        } on FirebaseAuthException catch (authErr) {
+          String msg = 'E-posta güncellenemedi: ${authErr.message}';
+          if (authErr.code == 'requires-recent-login') {
+            msg = 'E-posta değiştirmek için güvenlik gereği yeni giriş yapmış olmalısınız. Lütfen çıkış-giriş yapıp tekrar deneyin.';
+          }
+          setState(() {
+            _errorText = msg;
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
       await _firestore.collection('users').doc(user.uid).set({
         'fullName': _nameCtrl.text.trim(),
         'email': _emailCtrl.text.trim(),
@@ -243,7 +263,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => _isLoading = false);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profil kaydedildi ✅')),
+        SnackBar(
+          content: Text(emailVerificationSent
+              ? 'Profil kaydedildi ve e-posta doğrulama linki gönderildi ✅'
+              : 'Profil kaydedildi ✅'),
+        ),
       );
     } catch (e) {
       setState(() {
@@ -260,10 +284,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.secondary),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: AppColors.secondary),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: Text(
           'Profil ',
           style: AppTextStyles.h1.copyWith(color: AppColors.secondary),

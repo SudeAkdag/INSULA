@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import 'confirm_selection_button.dart';
@@ -88,8 +89,12 @@ class _DosageSelectionBottomSheetState
         ),
         content: TextField(
           controller: _customController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+          ],
           decoration: InputDecoration(
-            hintText: 'Örn: 15 mg, 200 mg',
+            hintText: 'Örn: 15, 200',
             hintStyle: AppTextStyles.body.copyWith(
               fontSize: 14,
               color: AppColors.textSecLight,
