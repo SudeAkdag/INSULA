@@ -12,14 +12,22 @@ import 'profile_screen.dart';
 import 'chatbot_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+ 
+  final int initialIndex;                          // ← ekle
+  const MainScreen({super.key, this.initialIndex = 2});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 2; // Ana Sayfa artık index 2'de
+   late int _selectedIndex;  
+
+     @override
+  void initState() {        // ← BU BLOĞU EKLE
+    super.initState();
+    _selectedIndex = widget.initialIndex;
+  }
 
   final List<Widget> _screens = [
     const MedicationScreen(), // 0 – İlaç
