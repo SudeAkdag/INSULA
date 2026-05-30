@@ -43,7 +43,7 @@ class InsulaApp extends StatelessWidget {
       title: 'Insula',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      
+
       // Türkçe tarih/saat desteği ve yerelleştirme
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -55,7 +55,7 @@ class InsulaApp extends StatelessWidget {
         Locale('en', 'US'),
       ],
       locale: const Locale('tr', 'TR'),
-      
+
       // Giriş kontrol mekanizması
       home: const AuthWrapper(),
     );
