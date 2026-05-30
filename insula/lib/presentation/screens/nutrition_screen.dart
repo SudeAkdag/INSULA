@@ -7,7 +7,7 @@ import '/core/theme/app_constants.dart';
 import '../widgets/nutrition/nutrition_summary_card.dart';
 import '../widgets/nutrition/meal_card.dart';
 import 'package:insula/presentation/screens/add_food_screen.dart';
-import 'package:insula/presentation/screens/reports_screen.dart';
+import 'package:insula/presentation/screens/reports/reports_screen.dart';
 
 /// Beslenme takip ekranı.
 /// ChangeNotifierProvider + Consumer<NutritionViewModel> kullanır.
