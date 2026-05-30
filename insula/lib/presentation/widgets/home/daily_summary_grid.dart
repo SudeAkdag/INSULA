@@ -5,7 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../data/services/exercise_service.dart'; // Yolunu projene göre düzenle
 import '../../../logic/viewmodels/nutrition_viewmodel.dart'; // Yolunu projene göre düzenle
-import '../../../presentation/screens/reports_screen.dart';
+import '../../../presentation/screens/reports/reports_screen.dart';
 
 class DailySummaryGrid extends StatefulWidget {
   const DailySummaryGrid({super.key});

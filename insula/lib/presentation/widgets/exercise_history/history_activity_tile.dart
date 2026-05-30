@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:insula/presentation/screens/reports_screen.dart';
+import 'package:insula/presentation/screens/reports/reports_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 
 // --- BU AY ÖZETİ KARTI (Görseldeki büyük beyaz kart) ---
